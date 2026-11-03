@@ -1,3 +1,7 @@
+
+import os
+from pathlib import Path
+
 import mysql.connector
 from mysql.connector import Error
 
@@ -14,10 +18,24 @@ def get_connection():
             "port": Config.DB_PORT
         }
 
-        # Enable certificate verification when an SSL certificate is configured
-        if Config.DB_SSL_CA:
+        # Support both local CA file and Vercel environment variable
+        ca_content = os.getenv("DB_SSL_CA_CONTENT")
+        ca_path = Config.DB_SSL_CA
+
+        if ca_content:
+            certificate_path = Path("/tmp/aiven-ca.pem")
+
+            if (
+                not certificate_path.exists()
+                or certificate_path.read_text(encoding="utf-8") != ca_content
+            ):
+                certificate_path.write_text(ca_content, encoding="utf-8")
+
+            ca_path = str(certificate_path)
+
+        if ca_path:
             connection_config.update({
-                "ssl_ca": Config.DB_SSL_CA,
+                "ssl_ca": ca_path,
                 "ssl_verify_cert": True,
                 "ssl_verify_identity": True
             })
@@ -27,7 +45,7 @@ def get_connection():
         if connection.is_connected():
             return connection
 
-    except Error as error:
+    except (Error, OSError) as error:
         print(f"Database connection error: {error}")
 
     return None
