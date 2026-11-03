@@ -94,7 +94,9 @@ load_dotenv()
 
 # Initialize Flask
 app = Flask(__name__)
-
+@app.route("/healthz")
+def healthz():
+    return {"status": "ok"}, 200
 
 # Configure the session security key
 app.secret_key = os.environ.get("SECRET_KEY")
