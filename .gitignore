@@ -19,3 +19,11 @@ __pycache__/
 
 # Generated files
 .DS_Store
+# Database certificates and backups
+ca.pem
+ca*.pem
+backups/
+*.sql
+
+# Environment and deployment secrets
+.env

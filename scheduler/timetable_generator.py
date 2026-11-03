@@ -1,18 +1,7 @@
-import mysql.connector
+
 from ortools.sat.python import cp_model
 
-from config import Config
-
-
-def get_connection():
-    """Create a MySQL database connection."""
-    return mysql.connector.connect(
-        host=Config.DB_HOST,
-        user=Config.DB_USER,
-        password=Config.DB_PASSWORD,
-        database=Config.DB_NAME,
-        port=Config.DB_PORT
-    )
+from database.db import get_connection
 
 
 def generate_timetable():
@@ -203,14 +192,12 @@ def generate_timetable():
         def faculty_is_available(faculty_id, slot_id):
             key = (faculty_id, slot_id)
 
-            # Respect explicitly recorded availability.
-            # If no record exists, assume the faculty is available.
+            # If no availability record exists, assume available.
             return faculty_availability.get(key, True)
 
         # 10. Build the CP-SAT model
         model = cp_model.CpModel()
 
-        # Key: (lesson_id, slot_id, faculty_id, room_id)
         choice_vars = {}
         lesson_candidates = {}
 
@@ -257,7 +244,6 @@ def generate_timetable():
 
             lesson_candidates[current_lesson_id] = candidates
 
-            # Every lesson must be scheduled exactly once.
             model.Add(
                 sum(choice_vars[key] for key in candidates) == 1
             )
@@ -315,8 +301,8 @@ def generate_timetable():
                 if variables:
                     model.Add(sum(variables) <= 1)
 
-        # 14. Soft constraint:
-        # Avoid repeating the same subject on the same day.
+        # 14. Soft constraint: avoid repeating the same subject
+        # on the same day.
         penalty_variables = []
         slots_by_day = {}
 
@@ -420,8 +406,7 @@ def generate_timetable():
                 "slot_id": slot_id
             })
 
-        # 18. Replace old timetable entries with the new schedule.
-        # Do not commit until all inserts succeed.
+        # 18. Replace old timetable entries only after all inserts succeed.
         cursor.execute("DELETE FROM timetable")
 
         insert_query = """
@@ -478,4 +463,3 @@ def generate_timetable():
                 connection.close()
             except Exception:
                 pass
-
