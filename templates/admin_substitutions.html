@@ -1,0 +1,405 @@
+
+{% extends "base.html" %}
+
+{% block title %}Substitute Faculty Management{% endblock %}
+
+{% block content %}
+
+<style>
+    .substitute-page {
+        width: 100%;
+    }
+
+    .substitute-banner {
+        background: linear-gradient(135deg, #2563eb, #4f46e5);
+        color: white;
+        padding: 25px 28px;
+        border-radius: 15px;
+        margin-bottom: 22px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 18px;
+    }
+
+    .substitute-banner h2 {
+        font-size: 25px;
+        margin-bottom: 7px;
+        color: white;
+    }
+
+    .substitute-banner p {
+        font-size: 14px;
+        opacity: 0.9;
+        margin: 0;
+    }
+
+    .substitute-banner .btn {
+        background: white;
+        color: #1d4ed8;
+        white-space: nowrap;
+    }
+
+    .leave-info-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 18px;
+        margin-top: 20px;
+    }
+
+    .leave-info-item {
+        background: #f8fafc;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 16px;
+        min-width: 0;
+    }
+
+    .leave-info-item label {
+        display: block;
+        color: #6b7280;
+        font-size: 12px;
+        margin-bottom: 8px;
+    }
+
+    .leave-info-item strong {
+        display: block;
+        font-size: 15px;
+        color: #172033;
+        overflow-wrap: anywhere;
+    }
+
+    .substitute-table-card {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        padding: 22px;
+        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.04);
+        margin-top: 22px;
+    }
+
+    .substitute-table-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+
+    .substitute-table-header h3 {
+        font-size: 19px;
+        color: #111827;
+        margin-bottom: 5px;
+    }
+
+    .substitute-table-header p {
+        color: #6b7280;
+        font-size: 13px;
+    }
+
+    .session-count {
+        background: #eef4ff;
+        color: #1d4ed8;
+        padding: 8px 13px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: bold;
+        white-space: nowrap;
+    }
+
+    .eligible-person {
+        background: #eef4ff;
+        border: 1px solid #dbeafe;
+        color: #1e40af;
+        padding: 9px 11px;
+        border-radius: 8px;
+        margin-bottom: 7px;
+        font-size: 13px;
+    }
+
+    .eligible-person small {
+        display: block;
+        margin-top: 4px;
+        color: #64748b;
+    }
+
+    .no-sessions {
+        text-align: center;
+        padding: 45px 20px;
+        background: #f8fafc;
+        border: 1px dashed #cbd5e1;
+        border-radius: 12px;
+    }
+
+    .no-sessions .empty-icon {
+        font-size: 42px;
+        margin-bottom: 12px;
+    }
+
+    .no-sessions h3 {
+        font-size: 18px;
+        color: #374151;
+        margin-bottom: 8px;
+    }
+
+    .no-sessions p {
+        font-size: 13px;
+        color: #6b7280;
+        line-height: 1.6;
+    }
+
+    .substitute-table-card .table-responsive table {
+        min-width: 1100px;
+    }
+
+    @media (max-width: 1000px) {
+        .leave-info-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 700px) {
+        .substitute-banner {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .leave-info-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .substitute-table-header {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+    }
+</style>
+
+
+<div class="substitute-page">
+
+    <!-- BLUE GRADIENT HEADER -->
+    <div class="substitute-banner">
+
+        <div>
+            <h2>Substitute Faculty Management</h2>
+            <p>
+                Manage substitute faculty and affected timetable
+                sessions for approved leave applications.
+            </p>
+        </div>
+
+        <a href="{{ url_for('admin_leave_requests') }}"
+           class="btn">
+            ← Back to Leave Requests
+        </a>
+
+    </div>
+
+
+    <!-- APPROVED LEAVE INFORMATION -->
+    <div class="card">
+
+        <div class="panel-header">
+
+            <div>
+                <h2>Approved Leave Details</h2>
+                <p>Faculty leave application information</p>
+            </div>
+
+            <span class="leave-status approved">
+                {{ leave.status }}
+            </span>
+
+        </div>
+
+        <div class="leave-info-grid">
+
+            <div class="leave-info-item">
+                <label>Faculty Name</label>
+                <strong>{{ leave.faculty_name }}</strong>
+            </div>
+
+            <div class="leave-info-item">
+                <label>Employee ID</label>
+                <strong>{{ leave.employee_id }}</strong>
+            </div>
+
+            <div class="leave-info-item">
+                <label>Leave Request ID</label>
+                <strong>#{{ leave.leave_id }}</strong>
+            </div>
+
+            <div class="leave-info-item">
+                <label>Leave Period</label>
+                <strong>
+                    {{ leave.start_date }} to {{ leave.end_date }}
+                </strong>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- AFFECTED TIMETABLE SESSIONS -->
+    <div class="substitute-table-card">
+
+        <div class="substitute-table-header">
+
+            <div>
+                <h3>Affected Timetable Sessions</h3>
+                <p>
+                    Review scheduled classes and eligible substitute faculty.
+                </p>
+            </div>
+
+            <span class="session-count">
+                {{ sessions | length }} Sessions
+            </span>
+
+        </div>
+
+
+        {% if sessions %}
+
+        <div class="table-responsive">
+
+            <table>
+
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Class</th>
+                        <th>Subject</th>
+                        <th>Period</th>
+                        <th>Time</th>
+                        <th>Room</th>
+                        <th>Eligible Substitute Faculty</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    {% for item in sessions %}
+
+                    <tr>
+
+                        <td>
+                            <strong>{{ item.class_date }}</strong>
+                        </td>
+
+                        <td>{{ item.class_name }}</td>
+
+                        <td>
+                            <strong>{{ item.subject_code }}</strong>
+                            <br>
+                            <small>{{ item.subject_name }}</small>
+                        </td>
+
+                        <td>Period {{ item.period_number }}</td>
+
+                        <td>
+                            {{ item.start_time }} -
+                            {{ item.end_time }}
+                        </td>
+
+                        <td>{{ item.room_number or 'Not assigned' }}</td>
+
+                        <td>
+
+                            {% if item.eligible_faculty %}
+
+                                {% for person in item.eligible_faculty %}
+
+                                <div class="eligible-person">
+                                    <strong>{{ person.faculty_name }}</strong>
+                                    <small>{{ person.employee_id }}</small>
+                                </div>
+
+                                {% endfor %}
+
+                            {% else %}
+
+                                <span style="color: #dc2626;">
+                                    No eligible substitute available
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+                        <td>
+
+                            {% if item.substitution %}
+
+                                {% if item.substitution.status == 'CONFIRMED' %}
+
+                                    <span class="leave-status approved">
+                                        Confirmed
+                                    </span>
+
+                                    <p style="margin-top: 7px;">
+                                        {{ item.substitution.substitute_name }}
+                                    </p>
+
+                                {% elif item.substitution.status == 'SUGGESTED' %}
+
+                                    <span class="leave-status pending">
+                                        Suggested
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="leave-status rejected">
+                                        Cancelled
+                                    </span>
+
+                                {% endif %}
+
+                            {% else %}
+
+                                <span class="leave-status pending">
+                                    Not Assigned
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+        {% else %}
+
+        <div class="no-sessions">
+
+            <div class="empty-icon">📅</div>
+
+            <h3>No Affected Sessions Found</h3>
+
+            <p>
+                There are currently no scheduled classes for this faculty
+                member during the approved leave period.
+                <br>
+                Affected sessions will appear here when matching
+                timetable entries are available.
+            </p>
+
+        </div>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+{% endblock %}

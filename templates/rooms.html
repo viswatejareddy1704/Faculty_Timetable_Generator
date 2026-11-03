@@ -1,0 +1,317 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Room Management{% endblock %}
+
+{% block header_title %}Room Management{% endblock %}
+
+{% block header_subtitle %}
+Manage classrooms, laboratories and seminar halls
+{% endblock %}
+
+{% block content %}
+
+{% set is_admin = session.get('role', '').upper() == 'ADMIN' %}
+
+<div class="page-title">
+    <div>
+        <h2>Rooms</h2>
+        <p>View classrooms, laboratories and seminar halls.</p>
+    </div>
+
+    {% if is_admin %}
+    <button type="button" class="add-btn" id="addRoomButton">
+        ➕ Add Room
+    </button>
+    {% endif %}
+</div>
+
+{% if not is_admin %}
+<div class="message info">
+    👁️ Staff View: You can view and search room information. Only Admin can add, edit or delete rooms.
+</div>
+{% endif %}
+
+<div class="card" style="margin-bottom:20px;">
+    <input
+        type="text"
+        id="searchRoom"
+        placeholder="🔍 Search room, type, building..."
+        autocomplete="off">
+</div>
+
+<div class="table-card">
+    <table id="roomTable">
+        <thead>
+            <tr>
+                <th>Room</th>
+                <th>Room Type</th>
+                <th>Capacity</th>
+                <th>Building</th>
+                {% if is_admin %}
+                <th>Actions</th>
+                {% endif %}
+            </tr>
+        </thead>
+
+        <tbody id="roomTableBody">
+
+            {% for room in rooms %}
+            <tr>
+                <td>
+                    <strong>{{ room.room_number }}</strong>
+                </td>
+
+                <td>
+                    {% if room.room_type == "LAB" %}
+                    <span style="display:inline-block;background:#dcfce7;color:#166534;padding:5px 10px;border-radius:20px;font-size:12px;font-weight:bold;">
+                        🧪 Laboratory
+                    </span>
+
+                    {% elif room.room_type == "SEMINAR_HALL" %}
+                    <span style="display:inline-block;background:#fef3c7;color:#b45309;padding:5px 10px;border-radius:20px;font-size:12px;font-weight:bold;">
+                        🎤 Seminar Hall
+                    </span>
+
+                    {% else %}
+                    <span style="display:inline-block;background:#dbeafe;color:#1d4ed8;padding:5px 10px;border-radius:20px;font-size:12px;font-weight:bold;">
+                        🏫 Classroom
+                    </span>
+                    {% endif %}
+                </td>
+
+                <td>
+                    <span style="display:inline-block;background:#ede9fe;color:#6d28d9;padding:5px 10px;border-radius:20px;font-size:12px;font-weight:bold;">
+                        {{ room.capacity }} Seats
+                    </span>
+                </td>
+
+                <td>
+                    {% if room.building %}
+                    <span style="display:inline-block;background:#f3f4f6;color:#374151;padding:5px 10px;border-radius:20px;font-size:12px;font-weight:bold;">
+                        🏢 {{ room.building }}
+                    </span>
+                    {% else %}
+                    -
+                    {% endif %}
+                </td>
+
+                {% if is_admin %}
+                <td>
+                    <div class="actions">
+                        <button
+                            type="button"
+                            class="secondary-btn edit-room-btn"
+                            style="background:#f59e0b;color:white;"
+                            data-id="{{ room.room_id }}"
+                            data-number="{{ room.room_number }}"
+                            data-type="{{ room.room_type }}"
+                            data-capacity="{{ room.capacity }}"
+                            data-building="{{ room.building or '' }}">
+                            ✏️ Edit
+                        </button>
+
+                        <button
+                            type="button"
+                            class="danger-btn delete-room-btn"
+                            data-id="{{ room.room_id }}"
+                            data-number="{{ room.room_number }}">
+                            🗑️ Delete
+                        </button>
+                    </div>
+                </td>
+                {% endif %}
+            </tr>
+
+            {% else %}
+            <tr>
+                <td colspan="{{ 5 if is_admin else 4 }}" class="empty">
+                    <div class="empty-icon">🚪</div>
+                    <strong>No rooms found.</strong>
+
+                    {% if is_admin %}
+                    <p style="margin-top:8px;">
+                        Click "Add Room" to create your first room.
+                    </p>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+
+        </tbody>
+    </table>
+</div>
+
+
+{% if is_admin %}
+
+<!-- ADMIN-ONLY ADD / EDIT ROOM MODAL -->
+
+<div
+    class="modal"
+    id="roomModal"
+    style="display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,0.55);align-items:center;justify-content:center;padding:20px;">
+
+    <div
+        class="modal-content"
+        style="width:600px;max-width:95%;max-height:90vh;overflow-y:auto;background:white;border-radius:16px;padding:30px;box-shadow:0 20px 50px rgba(0,0,0,0.25);">
+
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:25px;">
+            <h2 id="roomModalTitle">Add Room</h2>
+
+            <button
+                type="button"
+                id="closeRoomModalButton"
+                style="background:none;border:none;font-size:28px;cursor:pointer;color:#6b7280;">
+                ×
+            </button>
+        </div>
+
+        <form method="POST" action="{{ url_for('save_room') }}" id="roomForm">
+
+            <input type="hidden" name="room_id" id="room_id">
+
+            <div class="form-grid">
+
+                <div class="form-group">
+                    <label for="room_number">Room Number *</label>
+                    <input
+                        type="text"
+                        name="room_number"
+                        id="room_number"
+                        placeholder="Example: CSE-101"
+                        required>
+                </div>
+
+                <div class="form-group">
+                    <label for="room_type">Room Type *</label>
+                    <select name="room_type" id="room_type" required>
+                        <option value="">Select Room Type</option>
+                        <option value="CLASSROOM">Classroom</option>
+                        <option value="LAB">Laboratory</option>
+                        <option value="SEMINAR_HALL">Seminar Hall</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="capacity">Capacity *</label>
+                    <input
+                        type="number"
+                        name="capacity"
+                        id="capacity"
+                        min="1"
+                        placeholder="Example: 60"
+                        required>
+                </div>
+
+                <div class="form-group">
+                    <label for="building">Building</label>
+                    <input
+                        type="text"
+                        name="building"
+                        id="building"
+                        placeholder="Example: CSE Block">
+                </div>
+
+            </div>
+
+            <div class="actions" style="justify-content:flex-end;margin-top:25px;">
+                <button type="button" class="secondary-btn" id="cancelRoomModalButton">
+                    Cancel
+                </button>
+
+                <button type="submit" class="primary-btn">
+                    💾 Save Room
+                </button>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<script>
+const roomModal = document.getElementById("roomModal");
+const roomForm = document.getElementById("roomForm");
+const roomModalTitle = document.getElementById("roomModalTitle");
+
+function openRoomModal() {
+    roomModal.style.display = "flex";
+}
+
+function closeRoomModal() {
+    roomModal.style.display = "none";
+}
+
+function resetRoomForm() {
+    roomForm.reset();
+    document.getElementById("room_id").value = "";
+    roomModalTitle.textContent = "Add Room";
+}
+
+document.getElementById("addRoomButton").addEventListener("click", function() {
+    resetRoomForm();
+    openRoomModal();
+});
+
+document.getElementById("closeRoomModalButton").addEventListener("click", closeRoomModal);
+document.getElementById("cancelRoomModalButton").addEventListener("click", closeRoomModal);
+
+roomModal.addEventListener("click", function(event) {
+    if (event.target === roomModal) {
+        closeRoomModal();
+    }
+});
+
+document.querySelectorAll(".edit-room-btn").forEach(function(button) {
+    button.addEventListener("click", function() {
+        document.getElementById("room_id").value = button.dataset.id;
+        document.getElementById("room_number").value = button.dataset.number;
+        document.getElementById("room_type").value = button.dataset.type;
+        document.getElementById("capacity").value = button.dataset.capacity;
+        document.getElementById("building").value = button.dataset.building;
+
+        roomModalTitle.textContent = "Edit Room";
+        openRoomModal();
+    });
+});
+
+document.querySelectorAll(".delete-room-btn").forEach(function(button) {
+    button.addEventListener("click", function() {
+        const roomId = button.dataset.id;
+        const roomNumber = button.dataset.number;
+
+        if (confirm("Are you sure you want to delete room " + roomNumber + "?")) {
+            window.location.href = "/rooms/delete/" + roomId;
+        }
+    });
+});
+
+document.addEventListener("keydown", function(event) {
+    if (event.key === "Escape" && roomModal.style.display === "flex") {
+        closeRoomModal();
+    }
+});
+</script>
+
+{% endif %}
+
+
+<!-- SEARCH FOR BOTH ADMIN AND STAFF -->
+
+<script>
+const searchRoom = document.getElementById("searchRoom");
+const roomTableBody = document.getElementById("roomTableBody");
+
+searchRoom.addEventListener("input", function() {
+    const searchValue = searchRoom.value.toLowerCase().trim();
+    const rows = roomTableBody.querySelectorAll("tr");
+
+    rows.forEach(function(row) {
+        const rowText = row.textContent.toLowerCase();
+
+        row.style.display =
+            !searchValue || rowText.includes(searchValue) ? "" : "none";
+    });
+});
+</script>
+
+{% endblock %}

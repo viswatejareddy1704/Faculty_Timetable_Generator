@@ -1,0 +1,1087 @@
+
+{% extends "base.html" %}
+
+{% block title %}Timetable Generation | Faculty Timetable Generator{% endblock %}
+
+{% block header_title %}Timetable{% endblock %}
+
+{% block header_subtitle %}
+View and manage the generated faculty timetable.
+{% endblock %}
+
+{% block content %}
+
+{% set is_admin = session.get('role', '').upper() == 'ADMIN' %}
+{% set entries = timetable|default([], true) %}
+{% set class_list = classes|default([], true) %}
+{% set faculty_list = faculty|default([], true) %}
+{% set room_list = rooms|default([], true) %}
+{% set slot_list = slots|default([], true) %}
+
+<style>
+    :root {
+        --primary: #4f46e5;
+        --primary-dark: #3730a3;
+        --background: #f4f6fb;
+        --card: #ffffff;
+        --text: #1f2937;
+        --muted: #64748b;
+        --border: #e2e8f0;
+        --red: #dc2626;
+    }
+
+    .timetable-page {
+        width: 100%;
+        color: var(--text);
+    }
+
+    .staff-notice {
+        margin-bottom: 20px;
+        padding: 15px 18px;
+        background: #dbeafe;
+        border: 1px solid #bfdbfe;
+        border-left: 5px solid #3b82f6;
+        color: #1e40af;
+        border-radius: 12px;
+        font-weight: 600;
+    }
+
+    .page-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 18px;
+        margin-bottom: 24px;
+    }
+
+    .page-header h2 {
+        margin: 0 0 8px;
+        font-size: 25px;
+    }
+
+    .subtitle {
+        margin: 0;
+        color: var(--muted);
+    }
+
+    .actions {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .btn {
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        gap: 7px;
+        padding: 11px 15px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: white;
+        color: var(--text);
+        font-size: 14px;
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    .btn:hover {
+        filter: brightness(0.96);
+    }
+
+    .btn-primary {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+    }
+
+    .btn-generate {
+        background: #4db69b;
+        color: white;
+        border-color: #4db69b;
+    }
+
+    .btn:disabled {
+        opacity: 0.7;
+        cursor: wait;
+    }
+
+    .flash-container {
+        margin-bottom: 22px;
+    }
+
+    .flash {
+        padding: 15px 18px;
+        margin-bottom: 10px;
+        border-radius: 10px;
+        overflow-wrap: anywhere;
+    }
+
+    .flash-success {
+        background: #d1fae5;
+        color: #065f46;
+        border: 1px solid #a7f3d0;
+    }
+
+    .flash-error {
+        background: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+    }
+
+    .flash-warning {
+        background: #fef3c7;
+        color: #92400e;
+        border: 1px solid #fde68a;
+    }
+
+    .flash-info {
+        background: #dbeafe;
+        color: #1e40af;
+        border: 1px solid #bfdbfe;
+    }
+
+    .stats {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 18px;
+        margin-bottom: 28px;
+    }
+
+    .stat-card,
+    .panel {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        box-shadow: 0 5px 18px rgba(15, 23, 42, 0.04);
+    }
+
+    .stat-card {
+        padding: 24px;
+    }
+
+    .stat-icon {
+        font-size: 24px;
+        margin-bottom: 12px;
+    }
+
+    .stat-label {
+        color: var(--muted);
+        margin-bottom: 12px;
+        font-size: 15px;
+    }
+
+    .stat-number {
+        font-size: 34px;
+        font-weight: 750;
+    }
+
+    .panel {
+        padding: 24px;
+        margin-bottom: 26px;
+    }
+
+    .panel-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+
+    .panel-heading h2 {
+        margin: 0;
+        font-size: 22px;
+    }
+
+    .badge {
+        padding: 7px 12px;
+        border-radius: 25px;
+        background: #e0e7ff;
+        color: #3730a3;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .filters {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+
+    .filters select {
+        min-width: 190px;
+        max-width: 100%;
+        padding: 12px;
+        border: 1px solid var(--border);
+        border-radius: 9px;
+        background: white;
+        color: var(--text);
+        font-size: 15px;
+    }
+
+    .table-wrap {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .weekly-table {
+        table-layout: fixed;
+        min-width: 1050px;
+    }
+
+    .weekly-table th:first-child,
+    .weekly-table td:first-child {
+        width: 115px;
+    }
+
+    th {
+        padding: 14px 12px;
+        background: #f8fafc;
+        color: #475569;
+        border-bottom: 1px solid var(--border);
+        text-align: left;
+        font-size: 12px;
+        text-transform: uppercase;
+        vertical-align: top;
+    }
+
+    td {
+        padding: 12px;
+        border-bottom: 1px solid var(--border);
+        vertical-align: top;
+    }
+
+    .weekly-table td {
+        min-width: 130px;
+    }
+
+    .day-label {
+        color: var(--primary-dark);
+        font-weight: 750;
+        white-space: nowrap;
+    }
+
+    .lesson-card {
+        padding: 12px;
+        background: #eef2ff;
+        border-left: 4px solid var(--primary);
+        border-radius: 9px;
+        overflow-wrap: anywhere;
+        min-height: 80px;
+    }
+
+    .lesson-subject {
+        margin-bottom: 9px;
+        color: #312e81;
+        font-size: 14px;
+        font-weight: 750;
+    }
+
+    .lesson-detail {
+        margin-top: 5px;
+        color: #475569;
+        font-size: 12px;
+        line-height: 1.5;
+        overflow-wrap: anywhere;
+    }
+
+    .empty-slot {
+        color: #cbd5e1;
+        text-align: center;
+        padding: 16px 0;
+    }
+
+    .small-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 8px;
+    }
+
+    .small-actions a {
+        font-size: 12px;
+        font-weight: 650;
+        text-decoration: none;
+    }
+
+    .edit-link {
+        color: var(--primary);
+    }
+
+    .delete-link {
+        color: var(--red);
+    }
+
+    .details-table {
+        min-width: 850px;
+    }
+
+    .details-table td {
+        font-size: 14px;
+    }
+
+    .empty-state {
+        padding: 45px 20px;
+        text-align: center;
+        color: var(--muted);
+    }
+
+    .empty-icon {
+        font-size: 50px;
+        margin-bottom: 14px;
+    }
+
+    .empty-state h3 {
+        color: var(--text);
+        margin-bottom: 10px;
+    }
+
+    .footer-note {
+        margin-top: 18px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.6;
+    }
+
+    .no-results {
+        display: none;
+        padding: 20px;
+        color: var(--muted);
+        text-align: center;
+    }
+
+    @media (max-width: 900px) {
+        .stats {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .panel {
+            padding: 16px;
+        }
+    }
+
+    @media (max-width: 520px) {
+        .stats {
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .stat-card {
+            padding: 15px;
+        }
+
+        .stat-number {
+            font-size: 27px;
+        }
+
+        .page-header h2 {
+            font-size: 22px;
+        }
+
+        .filters select {
+            width: 100%;
+            min-width: 0;
+        }
+
+        .btn {
+            padding: 10px 12px;
+        }
+    }
+
+    @media print {
+        body {
+            background: white;
+        }
+
+        .no-print,
+        .actions,
+        .filters,
+        .flash-container,
+        .footer-note,
+        .staff-notice {
+            display: none !important;
+        }
+
+        .panel,
+        .stat-card {
+            box-shadow: none;
+            break-inside: avoid;
+        }
+
+        .table-wrap {
+            overflow: visible;
+        }
+
+        .weekly-table {
+            min-width: 0;
+            table-layout: auto;
+        }
+
+        th,
+        td {
+            padding: 5px;
+            font-size: 9px;
+        }
+
+        .lesson-card {
+            padding: 4px;
+            min-width: 0;
+        }
+
+        .lesson-detail {
+            font-size: 8px;
+        }
+    }
+</style>
+
+<div class="timetable-page">
+
+    <!-- STAFF VIEW NOTICE -->
+    {% if not is_admin %}
+    <div class="staff-notice">
+        👁️ Staff View: You can view, filter, print and download the timetable. Only Admin can generate, edit or delete timetable entries.
+    </div>
+    {% endif %}
+
+    <!-- PAGE HEADER -->
+    <header class="page-header">
+
+        <div>
+            <h2>🗓️ Timetable</h2>
+            <p class="subtitle">
+                View and manage your faculty timetable.
+            </p>
+        </div>
+
+        <div class="actions">
+
+            <a href="{{ url_for('dashboard') }}" class="btn">
+                🏠 Dashboard
+            </a>
+
+            <a href="{{ url_for('conflicts') }}" class="btn">
+                ⚠️ Conflicts
+            </a>
+
+            <a href="{{ url_for('download_timetable_pdf') }}" class="btn btn-primary">
+                📄 Download Timetable PDF
+            </a>
+
+            <button type="button" class="btn" onclick="window.print()">
+                🖨️ Print
+            </button>
+
+            {% if is_admin %}
+            <form
+                id="generateForm"
+                action="{{ url_for('generate') }}"
+                method="POST"
+                style="display:inline;"
+            >
+                <button
+                    type="submit"
+                    id="generateButton"
+                    class="btn btn-generate"
+                >
+                    ⚡ Generate Timetable
+                </button>
+            </form>
+            {% endif %}
+
+        </div>
+
+    </header>
+
+    <!-- FLASH MESSAGES -->
+    <div class="flash-container" aria-live="polite">
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+
+            {% if messages %}
+
+                {% for category, message in messages %}
+
+                    <div class="flash
+                        {% if category == 'success' %}flash-success
+                        {% elif category == 'error' or category == 'danger' %}flash-error
+                        {% elif category == 'warning' %}flash-warning
+                        {% else %}flash-info{% endif %}">
+
+                        {{ message }}
+
+                    </div>
+
+                {% endfor %}
+
+            {% endif %}
+
+        {% endwith %}
+
+    </div>
+
+    <!-- STATISTICS -->
+    {% set stats = namespace(class_ids=[], faculty_ids=[], room_ids=[]) %}
+
+    {% for entry in entries %}
+
+        {% if entry.class_id is defined and entry.class_id not in stats.class_ids %}
+            {% set stats.class_ids = stats.class_ids + [entry.class_id] %}
+        {% endif %}
+
+        {% if entry.faculty_id is defined and entry.faculty_id not in stats.faculty_ids %}
+            {% set stats.faculty_ids = stats.faculty_ids + [entry.faculty_id] %}
+        {% endif %}
+
+        {% if entry.room_id is defined and entry.room_id not in stats.room_ids %}
+            {% set stats.room_ids = stats.room_ids + [entry.room_id] %}
+        {% endif %}
+
+    {% endfor %}
+
+    <section class="stats">
+
+        <div class="stat-card">
+            <div class="stat-icon">📚</div>
+            <div class="stat-label">Scheduled Periods</div>
+            <div class="stat-number">{{ entries|length }}</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon">🏫</div>
+            <div class="stat-label">Classes Scheduled</div>
+            <div class="stat-number">{{ stats.class_ids|length }}</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon">👩‍🏫</div>
+            <div class="stat-label">Faculty Scheduled</div>
+            <div class="stat-number">{{ stats.faculty_ids|length }}</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon">🚪</div>
+            <div class="stat-label">Rooms Used</div>
+            <div class="stat-number">{{ stats.room_ids|length }}</div>
+        </div>
+
+    </section>
+
+    <!-- WEEKLY TIMETABLE -->
+    <section class="panel">
+
+        <div class="panel-heading">
+            <h2>🗓️ Weekly Timetable</h2>
+            <span class="badge">
+                {{ entries|length }} scheduled periods
+            </span>
+        </div>
+
+        <!-- FILTERS -->
+        <div class="filters no-print">
+
+            <select id="classFilter" aria-label="Filter by class">
+                <option value="">All Classes</option>
+
+                {% for item in class_list %}
+                <option value="{{ item.class_id }}">
+                    {{ item.class_name|default(item.name|default('Class')) }}
+                </option>
+                {% endfor %}
+            </select>
+
+            <select id="facultyFilter" aria-label="Filter by faculty">
+                <option value="">All Faculty</option>
+
+                {% for item in faculty_list %}
+                <option value="{{ item.faculty_id }}">
+                    {{ item.faculty_name|default(item.name|default('Faculty')) }}
+                </option>
+                {% endfor %}
+            </select>
+
+            <select id="roomFilter" aria-label="Filter by room">
+                <option value="">All Rooms</option>
+
+                {% for item in room_list %}
+                <option value="{{ item.room_id }}">
+                    {{ item.room_number|default(item.room_name|default(item.name|default('Room'))) }}
+                </option>
+                {% endfor %}
+            </select>
+
+            <button type="button" class="btn" onclick="resetFilters()">
+                Reset Filters
+            </button>
+
+        </div>
+
+        {% if entries %}
+
+        <div class="table-wrap">
+
+            <table id="weeklyTable" class="weekly-table">
+
+                <thead>
+                    <tr>
+
+                        <th>Day</th>
+
+                        {% for period in range(1, 7) %}
+
+                            {% set period_info = namespace(found=false, start='', end='') %}
+
+                            {% for slot in slot_list %}
+
+                                {% if not period_info.found and slot.period_number|string == period|string %}
+
+                                    {% set period_info.found = true %}
+                                    {% set period_info.start = slot.start_time %}
+                                    {% set period_info.end = slot.end_time %}
+
+                                {% endif %}
+
+                            {% endfor %}
+
+                            <th>
+                                Period {{ period }}
+
+                                <div class="lesson-detail">
+                                    {{ period_info.start }}
+
+                                    {% if period_info.end %}
+                                    – {{ period_info.end }}
+                                    {% endif %}
+                                </div>
+                            </th>
+
+                        {% endfor %}
+
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    {% set days = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'] %}
+
+                    {% for day in days %}
+
+                    <tr>
+
+                        <td class="day-label">
+                            {{ day|title }}
+                        </td>
+
+                        {% for period in range(1, 7) %}
+
+                        <td>
+
+                            {% set cell = namespace(found=false) %}
+
+                            {% for entry in entries %}
+
+                                {% if not cell.found
+                                      and entry.day_of_week is defined
+                                      and entry.day_of_week|string|upper == day
+                                      and entry.period_number is defined
+                                      and entry.period_number|string == period|string %}
+
+                                    {% set cell.found = true %}
+
+                                    <div
+                                        class="lesson-card"
+                                        data-class="{{ entry.class_id|default('') }}"
+                                        data-faculty="{{ entry.faculty_id|default('') }}"
+                                        data-room="{{ entry.room_id|default('') }}"
+                                    >
+
+                                        <div class="lesson-subject">
+                                            {{ entry.subject_name|default('Subject') }}
+                                        </div>
+
+                                        <div class="lesson-detail">
+                                            🏫 {{ entry.class_name|default('Class') }}
+                                        </div>
+
+                                        <div class="lesson-detail">
+                                            👩‍🏫 {{ entry.faculty_name|default('Not assigned') }}
+                                        </div>
+
+                                        <div class="lesson-detail">
+                                            🚪 {{ entry.room_number|default('Not assigned') }}
+                                        </div>
+
+                                        {% if entry.room_type|default('') %}
+                                        <div class="lesson-detail">
+                                            {{ entry.room_type }}
+                                        </div>
+                                        {% endif %}
+
+                                        {% if is_admin and entry.timetable_id is defined %}
+                                        <div class="small-actions no-print">
+
+                                            <a
+                                                class="edit-link"
+                                                href="{{ url_for('edit_timetable', timetable_id=entry.timetable_id) }}"
+                                            >
+                                                Edit
+                                            </a>
+
+                                            <a
+                                                class="delete-link"
+                                                href="{{ url_for('delete_timetable_entry', timetable_id=entry.timetable_id) }}"
+                                                onclick="return confirm('Delete this timetable entry?');"
+                                            >
+                                                Delete
+                                            </a>
+
+                                        </div>
+                                        {% endif %}
+
+                                    </div>
+
+                                {% endif %}
+
+                            {% endfor %}
+
+                            {% if not cell.found %}
+                            <div class="empty-slot">—</div>
+                            {% endif %}
+
+                        </td>
+
+                        {% endfor %}
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+        <div id="weeklyNoResults" class="no-results">
+            No timetable entries match the selected filters.
+        </div>
+
+        {% else %}
+
+        <div class="empty-state">
+
+            <div class="empty-icon">🗓️</div>
+
+            <h3>No Timetable Generated Yet</h3>
+
+            <p>
+                Your timetable is currently empty.
+            </p>
+
+            {% if is_admin %}
+
+            <p>
+                Click <strong>Generate Timetable</strong> above to create a schedule.
+            </p>
+
+            <button
+                type="button"
+                class="btn btn-primary"
+                onclick="document.getElementById('generateForm').requestSubmit()"
+            >
+                ⚡ Generate My Timetable
+            </button>
+
+            {% else %}
+
+            <p>
+                Please contact the Admin when a timetable is ready.
+            </p>
+
+            {% endif %}
+
+        </div>
+
+        {% endif %}
+
+    </section>
+
+    <!-- DETAILED TIMETABLE -->
+    <section class="panel">
+
+        <div class="panel-heading">
+            <h2>📋 Detailed Timetable</h2>
+        </div>
+
+        {% if entries %}
+
+        <div class="table-wrap">
+
+            <table id="detailsTable" class="details-table">
+
+                <thead>
+                    <tr>
+                        <th>Day</th>
+                        <th>Period</th>
+                        <th>Time</th>
+                        <th>Class</th>
+                        <th>Subject</th>
+                        <th>Faculty</th>
+                        <th>Room</th>
+
+                        {% if is_admin %}
+                        <th class="no-print">Actions</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    {% for entry in entries %}
+
+                    <tr
+                        data-class="{{ entry.class_id|default('') }}"
+                        data-faculty="{{ entry.faculty_id|default('') }}"
+                        data-room="{{ entry.room_id|default('') }}"
+                    >
+
+                        <td>
+                            {{ entry.day_of_week|default('')|title }}
+                        </td>
+
+                        <td>
+                            {{ entry.period_number|default('') }}
+                        </td>
+
+                        <td>
+                            {{ entry.start_time|default('') }}
+
+                            {% if entry.end_time is defined %}
+                            – {{ entry.end_time }}
+                            {% endif %}
+                        </td>
+
+                        <td>{{ entry.class_name|default('') }}</td>
+
+                        <td>{{ entry.subject_name|default('') }}</td>
+
+                        <td>{{ entry.faculty_name|default('') }}</td>
+
+                        <td>
+                            {{ entry.room_number|default('Not assigned') }}
+                        </td>
+
+                        {% if is_admin %}
+                        <td class="no-print">
+
+                            {% if entry.timetable_id is defined %}
+
+                            <div class="small-actions">
+
+                                <a
+                                    class="edit-link"
+                                    href="{{ url_for('edit_timetable', timetable_id=entry.timetable_id) }}"
+                                >
+                                    Edit
+                                </a>
+
+                                <a
+                                    class="delete-link"
+                                    href="{{ url_for('delete_timetable_entry', timetable_id=entry.timetable_id) }}"
+                                    onclick="return confirm('Delete this timetable entry?');"
+                                >
+                                    Delete
+                                </a>
+
+                            </div>
+
+                            {% endif %}
+
+                        </td>
+                        {% endif %}
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+        <div id="detailsNoResults" class="no-results">
+            No timetable entries match the selected filters.
+        </div>
+
+        {% else %}
+
+        <p class="subtitle">
+            Detailed timetable entries will appear here after generation.
+        </p>
+
+        {% endif %}
+
+        <p class="footer-note">
+            If timetable generation reports an error, verify that subjects are assigned to classes and faculty and that rooms and time slots are configured correctly.
+        </p>
+
+    </section>
+
+</div>
+
+<script>
+
+    // GENERATE TIMETABLE - ADMIN ONLY
+    const generateForm = document.getElementById("generateForm");
+    const generateButton = document.getElementById("generateButton");
+
+    if (generateForm && generateButton) {
+
+        generateForm.addEventListener("submit", function (event) {
+
+            if (!confirm(
+                "Generate a new timetable? If successful, this may replace the existing timetable."
+            )) {
+                event.preventDefault();
+                return;
+            }
+
+            generateButton.disabled = true;
+            generateButton.textContent = "⏳ Generating...";
+
+        });
+
+    }
+
+
+    // APPLY FILTERS
+    function applyFilters() {
+
+        const classFilter = document.getElementById("classFilter");
+        const facultyFilter = document.getElementById("facultyFilter");
+        const roomFilter = document.getElementById("roomFilter");
+
+        if (!classFilter || !facultyFilter || !roomFilter) {
+            return;
+        }
+
+        const classValue = classFilter.value;
+        const facultyValue = facultyFilter.value;
+        const roomValue = roomFilter.value;
+
+        let visibleDetails = 0;
+        let visibleWeekly = 0;
+
+        document.querySelectorAll("#detailsTable tbody tr").forEach(function (row) {
+
+            const visible =
+                (!classValue || row.dataset.class === classValue) &&
+                (!facultyValue || row.dataset.faculty === facultyValue) &&
+                (!roomValue || row.dataset.room === roomValue);
+
+            row.style.display = visible ? "" : "none";
+
+            if (visible) {
+                visibleDetails++;
+            }
+
+        });
+
+        document.querySelectorAll("#weeklyTable .lesson-card").forEach(function (card) {
+
+            const visible =
+                (!classValue || card.dataset.class === classValue) &&
+                (!facultyValue || card.dataset.faculty === facultyValue) &&
+                (!roomValue || card.dataset.room === roomValue);
+
+            card.style.display = visible ? "" : "none";
+
+            if (visible) {
+                visibleWeekly++;
+            }
+
+        });
+
+        const weeklyMessage = document.getElementById("weeklyNoResults");
+        const detailsMessage = document.getElementById("detailsNoResults");
+
+        if (weeklyMessage) {
+            weeklyMessage.style.display =
+                visibleWeekly === 0 ? "block" : "none";
+        }
+
+        if (detailsMessage) {
+            detailsMessage.style.display =
+                visibleDetails === 0 ? "block" : "none";
+        }
+
+        document.querySelectorAll("#weeklyTable tbody tr").forEach(function (row) {
+
+            const cards = row.querySelectorAll(".lesson-card");
+
+            let hasVisibleCard = false;
+
+            cards.forEach(function (card) {
+
+                if (card.style.display !== "none") {
+                    hasVisibleCard = true;
+                }
+
+            });
+
+            row.style.display =
+                (!classValue && !facultyValue && !roomValue) || hasVisibleCard
+                    ? ""
+                    : "none";
+
+        });
+
+    }
+
+
+    // RESET FILTERS
+    function resetFilters() {
+
+        const classFilter = document.getElementById("classFilter");
+        const facultyFilter = document.getElementById("facultyFilter");
+        const roomFilter = document.getElementById("roomFilter");
+
+        if (!classFilter || !facultyFilter || !roomFilter) {
+            return;
+        }
+
+        classFilter.value = "";
+        facultyFilter.value = "";
+        roomFilter.value = "";
+
+        applyFilters();
+
+    }
+
+
+    // FILTER CHANGE EVENTS
+    ["classFilter", "facultyFilter", "roomFilter"].forEach(function (id) {
+
+        const element = document.getElementById(id);
+
+        if (element) {
+            element.addEventListener("change", applyFilters);
+        }
+
+    });
+
+</script>
+
+{% endblock %}

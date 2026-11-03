@@ -1,0 +1,465 @@
+﻿
+{% extends "base.html" %}
+
+{% block title %}Time Slot Management{% endblock %}
+
+{% block header_title %}Time Slot Management{% endblock %}
+
+{% block header_subtitle %}
+Manage the working days and periods used by the timetable generator
+{% endblock %}
+
+{% block content %}
+
+{% set is_admin = session.get('role', '').upper() == 'ADMIN' %}
+
+<div class="page-title">
+    <div>
+        <h2>Time Slots</h2>
+        <p>View the working days and periods used by the timetable generator.</p>
+    </div>
+
+    {% if is_admin %}
+    <button type="button" class="add-btn" id="addTimeSlotButton">
+        ➕ Add Time Slot
+    </button>
+    {% endif %}
+</div>
+
+<!-- BLUE STAFF VIEW NOTICE -->
+{% if not is_admin %}
+<div style="
+    margin-bottom:20px;
+    padding:15px 18px;
+    background:#dbeafe;
+    border:1px solid #bfdbfe;
+    border-left:5px solid #3b82f6;
+    color:#1e40af;
+    border-radius:12px;
+    font-weight:600;
+">
+    👁️ Staff View: You can view and search time slots. Only Admin can add, edit or delete them.
+</div>
+{% endif %}
+
+<!-- SEARCH -->
+<div class="card" style="margin-bottom:20px;">
+    <input
+        type="text"
+        id="searchTimeSlot"
+        placeholder="🔍 Search day, period, start time, end time..."
+        autocomplete="off">
+</div>
+
+<!-- SUMMARY -->
+<div class="card" style="margin-bottom:20px;">
+    <h3 style="margin-top:0;">Timetable Working Hours</h3>
+
+    <p style="margin-bottom:0;">
+        Each time slot represents one period during which a class can be scheduled.
+        The timetable generator uses these slots to avoid faculty, room and class conflicts.
+    </p>
+
+    <div style="
+        display:grid;
+        grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+        gap:15px;
+        margin-top:20px;
+    ">
+
+        <div style="background:#f3f4f6;padding:18px;border-radius:12px;">
+            <div style="color:#6b7280;">Total Time Slots</div>
+            <h2 style="margin:8px 0 0;">{{ slots|length }}</h2>
+        </div>
+
+        <div style="background:#eff6ff;padding:18px;border-radius:12px;">
+            <div style="color:#6b7280;">Working Days</div>
+            <h2 style="margin:8px 0 0;">
+                {{ slots|map(attribute='day_of_week')|unique|list|length }}
+            </h2>
+        </div>
+
+        <div style="background:#f5f3ff;padding:18px;border-radius:12px;">
+            <div style="color:#6b7280;">Periods Per Day</div>
+            <h2 style="margin:8px 0 0;">
+                {% if slots %}
+                    {% set counts = namespace(values={}) %}
+                    {% for slot in slots %}
+                        {% set day = slot.day_of_week %}
+                        {% if day in counts.values %}
+                            {% set _ = counts.values.update({day: counts.values[day] + 1}) %}
+                        {% else %}
+                            {% set _ = counts.values.update({day: 1}) %}
+                        {% endif %}
+                    {% endfor %}
+                    {{ counts.values.values()|list|max }}
+                {% else %}
+                    0
+                {% endif %}
+            </h2>
+        </div>
+
+    </div>
+</div>
+
+<!-- TIME SLOT TABLE -->
+<div class="table-card">
+    <table id="timeSlotTable">
+
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Day</th>
+                <th>Period</th>
+                <th>Start Time</th>
+                <th>End Time</th>
+                {% if is_admin %}
+                <th>Actions</th>
+                {% endif %}
+            </tr>
+        </thead>
+
+        <tbody id="timeSlotTableBody">
+
+            {% for slot in slots %}
+            <tr>
+
+                <td><strong>#{{ slot.slot_id }}</strong></td>
+
+                <td>
+                    <span style="
+                        display:inline-block;
+                        background:#e0e7ff;
+                        color:#4338ca;
+                        padding:5px 10px;
+                        border-radius:20px;
+                        font-size:12px;
+                        font-weight:bold;
+                    ">
+                        {{ slot.day_of_week }}
+                    </span>
+                </td>
+
+                <td>
+                    <span style="
+                        display:inline-block;
+                        background:#f3e8ff;
+                        color:#7e22ce;
+                        padding:5px 10px;
+                        border-radius:20px;
+                        font-size:12px;
+                        font-weight:bold;
+                    ">
+                        Period {{ slot.period_number }}
+                    </span>
+                </td>
+
+                <td>{{ slot.start_time }}</td>
+                <td>{{ slot.end_time }}</td>
+
+                {% if is_admin %}
+                <td>
+                    <div class="actions">
+
+                        <button
+                            type="button"
+                            class="secondary-btn edit-time-slot-btn"
+                            data-id="{{ slot.slot_id }}"
+                            data-day="{{ slot.day_of_week }}"
+                            data-period="{{ slot.period_number }}"
+                            data-start="{{ slot.start_time }}"
+                            data-end="{{ slot.end_time }}"
+                            style="background:#f59e0b;color:white;">
+                            ✏️ Edit
+                        </button>
+
+                        <button
+                            type="button"
+                            class="danger-btn delete-time-slot-btn"
+                            data-id="{{ slot.slot_id }}"
+                            data-period="{{ slot.period_number }}"
+                            data-day="{{ slot.day_of_week }}">
+                            🗑️ Delete
+                        </button>
+
+                    </div>
+                </td>
+                {% endif %}
+
+            </tr>
+
+            {% else %}
+            <tr>
+                <td colspan="{{ 6 if is_admin else 5 }}" class="empty">
+                    <div class="empty-icon">🕒</div>
+                    <strong>No time slots found.</strong>
+
+                    {% if is_admin %}
+                    <p style="margin-top:8px;">
+                        Click "Add Time Slot" to create your first time slot.
+                    </p>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+
+        </tbody>
+    </table>
+</div>
+
+
+{% if is_admin %}
+
+<!-- ADMIN-ONLY ADD / EDIT MODAL -->
+
+<div
+    class="modal"
+    id="timeSlotModal"
+    style="
+        display:none;
+        position:fixed;
+        z-index:1000;
+        left:0;
+        top:0;
+        width:100%;
+        height:100%;
+        background:rgba(0,0,0,0.55);
+        align-items:center;
+        justify-content:center;
+        padding:20px;
+    ">
+
+    <div class="modal-content" style="
+        width:600px;
+        max-width:95%;
+        max-height:90vh;
+        overflow-y:auto;
+        background:white;
+        border-radius:16px;
+        padding:30px;
+        box-shadow:0 20px 50px rgba(0,0,0,0.25);
+    ">
+
+        <div style="
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            margin-bottom:25px;
+        ">
+            <h2 id="timeSlotModalTitle">Add Time Slot</h2>
+
+            <button
+                type="button"
+                id="closeTimeSlotModalButton"
+                style="
+                    background:none;
+                    border:none;
+                    font-size:28px;
+                    cursor:pointer;
+                    color:#6b7280;
+                ">
+                ×
+            </button>
+        </div>
+
+        <form method="POST" action="{{ url_for('save_time_slot') }}" id="timeSlotForm">
+
+            <input type="hidden" name="slot_id" id="slot_id">
+
+            <div class="form-grid">
+
+                <div class="form-group">
+                    <label for="day_of_week">Working Day *</label>
+
+                    <select name="day_of_week" id="day_of_week" required>
+                        <option value="">Select Day</option>
+                        <option value="MONDAY">Monday</option>
+                        <option value="TUESDAY">Tuesday</option>
+                        <option value="WEDNESDAY">Wednesday</option>
+                        <option value="THURSDAY">Thursday</option>
+                        <option value="FRIDAY">Friday</option>
+                        <option value="SATURDAY">Saturday</option>
+                        <option value="SUNDAY">Sunday</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="period_number">Period Number *</label>
+
+                    <input
+                        type="number"
+                        name="period_number"
+                        id="period_number"
+                        min="1"
+                        placeholder="Example: 1"
+                        required>
+                </div>
+
+                <div class="form-group">
+                    <label for="start_time">Start Time *</label>
+
+                    <input
+                        type="time"
+                        name="start_time"
+                        id="start_time"
+                        required>
+                </div>
+
+                <div class="form-group">
+                    <label for="end_time">End Time *</label>
+
+                    <input
+                        type="time"
+                        name="end_time"
+                        id="end_time"
+                        required>
+                </div>
+
+            </div>
+
+            <div class="actions" style="justify-content:flex-end;margin-top:25px;">
+                <button
+                    type="button"
+                    class="secondary-btn"
+                    id="cancelTimeSlotModalButton">
+                    Cancel
+                </button>
+
+                <button type="submit" class="primary-btn">
+                    💾 Save Time Slot
+                </button>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<script>
+(function () {
+
+    const modal = document.getElementById("timeSlotModal");
+    const form = document.getElementById("timeSlotForm");
+    const modalTitle = document.getElementById("timeSlotModalTitle");
+
+    function openModal() {
+        modal.style.display = "flex";
+    }
+
+    function closeModal() {
+        modal.style.display = "none";
+    }
+
+    function resetForm() {
+        form.reset();
+        document.getElementById("slot_id").value = "";
+        modalTitle.textContent = "Add Time Slot";
+    }
+
+    document.getElementById("addTimeSlotButton").addEventListener("click", function () {
+        resetForm();
+        openModal();
+    });
+
+    document.getElementById("closeTimeSlotModalButton").addEventListener("click", closeModal);
+
+    document.getElementById("cancelTimeSlotModalButton").addEventListener("click", closeModal);
+
+    modal.addEventListener("click", function (event) {
+        if (event.target === modal) {
+            closeModal();
+        }
+    });
+
+    document.querySelectorAll(".edit-time-slot-btn").forEach(function (button) {
+
+        button.addEventListener("click", function () {
+
+            resetForm();
+
+            document.getElementById("slot_id").value = button.dataset.id;
+            document.getElementById("day_of_week").value = button.dataset.day;
+            document.getElementById("period_number").value = button.dataset.period;
+
+            document.getElementById("start_time").value =
+                button.dataset.start.substring(0, 5);
+
+            document.getElementById("end_time").value =
+                button.dataset.end.substring(0, 5);
+
+            modalTitle.textContent = "Edit Time Slot";
+
+            openModal();
+        });
+
+    });
+
+    document.querySelectorAll(".delete-time-slot-btn").forEach(function (button) {
+
+        button.addEventListener("click", function () {
+
+            const slotId = button.dataset.id;
+            const day = button.dataset.day;
+            const period = button.dataset.period;
+
+            if (!confirm("Delete Period " + period + " on " + day + "?")) {
+                return;
+            }
+
+            window.location.href = "/time-slots/delete/" + slotId;
+        });
+
+    });
+
+    form.addEventListener("submit", function (event) {
+
+        const startTime = document.getElementById("start_time").value;
+        const endTime = document.getElementById("end_time").value;
+
+        if (startTime && endTime && startTime >= endTime) {
+            event.preventDefault();
+            alert("End time must be later than start time.");
+        }
+
+    });
+
+    document.addEventListener("keydown", function (event) {
+
+        if (event.key === "Escape" && modal.style.display === "flex") {
+            closeModal();
+        }
+
+    });
+
+})();
+</script>
+
+{% endif %}
+
+
+<!-- SEARCH FOR BOTH ADMIN AND STAFF -->
+
+<script>
+(function () {
+
+    const searchInput = document.getElementById("searchTimeSlot");
+    const tableBody = document.getElementById("timeSlotTableBody");
+
+    searchInput.addEventListener("input", function () {
+
+        const searchValue = this.value.toLowerCase().trim();
+
+        tableBody.querySelectorAll("tr").forEach(function (row) {
+
+            const rowText = row.textContent.toLowerCase();
+
+            row.style.display =
+                rowText.includes(searchValue) ? "" : "none";
+
+        });
+
+    });
+
+})();
+</script>
+
+{% endblock %}

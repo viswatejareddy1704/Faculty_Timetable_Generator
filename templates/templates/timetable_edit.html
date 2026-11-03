@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Edit Timetable</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+
+            margin: 0;
+
+            font-family:
+                Inter,
+                Arial,
+                sans-serif;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #eef2ff,
+                    #f8fafc,
+                    #ecfeff
+                );
+
+            min-height: 100vh;
+
+            color: #0f172a;
+        }
+
+        .page {
+
+            width: min(
+                100% - 32px,
+                950px
+            );
+
+            margin: 40px auto;
+        }
+
+        .topbar {
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #0f172a,
+                    #1e293b
+                );
+
+            color: white;
+
+            padding: 24px 28px;
+
+            border-radius: 20px;
+
+            box-shadow:
+                0 15px 40px
+                rgba(15, 23, 42, 0.15);
+        }
+
+        .topbar h1 {
+
+            margin: 0;
+
+            font-size: 28px;
+        }
+
+        .topbar p {
+
+            margin:
+                8px 0 0;
+
+            color: #cbd5e1;
+        }
+
+        .card {
+
+            margin-top: 24px;
+
+            background: white;
+
+            border-radius: 20px;
+
+            padding: 28px;
+
+            box-shadow:
+                0 15px 40px
+                rgba(15, 23, 42, 0.10);
+        }
+
+        .current {
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(
+                    4,
+                    minmax(0, 1fr)
+                );
+
+            gap: 14px;
+
+            margin-bottom: 28px;
+        }
+
+        .info {
+
+            background: #f8fafc;
+
+            border: 1px solid #e2e8f0;
+
+            padding: 16px;
+
+            border-radius: 14px;
+        }
+
+        .info-label {
+
+            font-size: 12px;
+
+            color: #64748b;
+
+            text-transform: uppercase;
+
+            letter-spacing: .06em;
+        }
+
+        .info-value {
+
+            margin-top: 7px;
+
+            font-weight: 700;
+
+            font-size: 15px;
+        }
+
+        .form-grid {
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(
+                    2,
+                    minmax(0, 1fr)
+                );
+
+            gap: 20px;
+        }
+
+        .field {
+
+            display: flex;
+
+            flex-direction: column;
+
+            gap: 8px;
+        }
+
+        label {
+
+            font-weight: 700;
+
+            color: #334155;
+        }
+
+        select {
+
+            width: 100%;
+
+            min-height: 48px;
+
+            padding: 0 14px;
+
+            border-radius: 12px;
+
+            border:
+                1px solid #cbd5e1;
+
+            background: white;
+
+            font-size: 15px;
+
+            outline: none;
+        }
+
+        select:focus {
+
+            border-color: #6366f1;
+
+            box-shadow:
+                0 0 0 3px
+                rgba(99, 102, 241, .12);
+        }
+
+        .actions {
+
+            display: flex;
+
+            gap: 12px;
+
+            margin-top: 28px;
+
+            flex-wrap: wrap;
+        }
+
+        .btn {
+
+            border: none;
+
+            min-height: 48px;
+
+            padding:
+                0 22px;
+
+            border-radius: 12px;
+
+            font-weight: 700;
+
+            text-decoration: none;
+
+            display: inline-flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            cursor: pointer;
+        }
+
+        .btn-save {
+
+            background: #2563eb;
+
+            color: white;
+        }
+
+        .btn-save:hover {
+
+            background: #1d4ed8;
+        }
+
+        .btn-cancel {
+
+            background: #e2e8f0;
+
+            color: #0f172a;
+        }
+
+        .hint {
+
+            margin-top: 20px;
+
+            background: #eff6ff;
+
+            border:
+                1px solid #bfdbfe;
+
+            border-radius: 14px;
+
+            padding: 16px;
+
+            color: #1e40af;
+
+            line-height: 1.6;
+        }
+
+        @media (max-width: 700px) {
+
+            .current {
+
+                grid-template-columns:
+                    repeat(
+                        2,
+                        minmax(0, 1fr)
+                    );
+            }
+
+            .form-grid {
+
+                grid-template-columns: 1fr;
+            }
+
+        }
+
+        @media (max-width: 450px) {
+
+            .current {
+
+                grid-template-columns: 1fr;
+            }
+
+            .page {
+
+                width:
+                    min(
+                        100% - 20px,
+                        950px
+                    );
+
+                margin: 20px auto;
+            }
+
+            .card {
+
+                padding: 20px;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="page">
+
+    <div class="topbar">
+
+        <h1>
+            ✏️ Edit Timetable Entry
+        </h1>
+
+        <p>
+            Change the faculty, room or time slot.
+            The system will automatically check conflicts.
+        </p>
+
+    </div>
+
+
+    <div class="card">
+
+        <div class="current">
+
+            <div class="info">
+
+                <div class="info-label">
+                    Class
+                </div>
+
+                <div class="info-value">
+                    {{ selected.class_name }}
+                    {{ selected.section }}
+                </div>
+
+            </div>
+
+
+            <div class="info">
+
+                <div class="info-label">
+                    Subject
+                </div>
+
+                <div class="info-value">
+
+                    {{ selected.subject_code }}
+
+                    -
+
+                    {{ selected.subject_name }}
+
+                </div>
+
+            </div>
+
+
+            <div class="info">
+
+                <div class="info-label">
+                    Current Faculty
+                </div>
+
+                <div class="info-value">
+
+                    {{ selected.faculty_name }}
+
+                </div>
+
+            </div>
+
+
+            <div class="info">
+
+                <div class="info-label">
+                    Subject Type
+                </div>
+
+                <div class="info-value">
+
+                    {{ selected.subject_type }}
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <form
+            action="/timetable/edit/save"
+            method="POST"
+        >
+
+            <input
+                type="hidden"
+                name="timetable_id"
+                value="{{ selected.timetable_id }}"
+            >
+
+
+            <div class="form-grid">
+
+
+                <div class="field">
+
+                    <label for="faculty_id">
+                        👨‍🏫 Faculty
+                    </label>
+
+                    <select
+                        id="faculty_id"
+                        name="faculty_id"
+                        required
+                    >
+
+                        {% for person in faculty %}
+
+                            <option
+                                value="{{ person.faculty_id }}"
+                                {% if person.faculty_id == selected.faculty_id %}
+                                    selected
+                                {% endif %}
+                            >
+
+                                {{ person.faculty_name }}
+
+                                -
+
+                                {{ person.employee_id }}
+
+                            </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+
+                <div class="field">
+
+                    <label for="room_id">
+                        🏫 Room
+                    </label>
+
+                    <select
+                        id="room_id"
+                        name="room_id"
+                        required
+                    >
+
+                        {% for room in rooms %}
+
+                            <option
+                                value="{{ room.room_id }}"
+                                {% if room.room_id == selected.room_id %}
+                                    selected
+                                {% endif %}
+                            >
+
+                                {{ room.room_number }}
+
+                                -
+                                
+                                {{ room.room_type }}
+
+                            </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+
+                <div class="field">
+
+                    <label for="slot_id">
+                        🕐 Day & Time
+                    </label>
+
+                    <select
+                        id="slot_id"
+                        name="slot_id"
+                        required
+                    >
+
+                        {% for slot in slots %}
+
+                            <option
+                                value="{{ slot.slot_id }}"
+                                {% if slot.slot_id == selected.slot_id %}
+                                    selected
+                                {% endif %}
+                            >
+
+                                {{ slot.day_of_week }}
+
+                                -
+
+                                Period {{ slot.period_number }}
+
+                                -
+
+                                {{ slot.start_time }}
+
+                                to
+
+                                {{ slot.end_time }}
+
+                            </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+
+            </div>
+
+
+            <div class="hint">
+
+                <strong>
+                    🔐 Automatic validation
+                </strong>
+
+                <br>
+
+                Before saving, the system checks:
+
+                faculty clash,
+                room clash,
+                class clash,
+                faculty availability,
+                and room type.
+
+            </div>
+
+
+            <div class="actions">
+
+                <button
+                    type="submit"
+                    class="btn btn-save"
+                >
+                    💾 Save Changes
+                </button>
+
+
+                <a
+                    href="/timetable"
+                    class="btn btn-cancel"
+                >
+                    ← Cancel
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+</body>
+
+</html>

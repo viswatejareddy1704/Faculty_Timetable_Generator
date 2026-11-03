@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Classes | Faculty Timetable Generator</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        body {
+            background: #f4f7fb;
+            color: #1f2937;
+        }
+
+        /* SIDEBAR */
+
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 240px;
+            height: 100vh;
+            background: #111827;
+            color: white;
+            padding: 25px 15px;
+        }
+
+        .logo {
+            font-size: 23px;
+            font-weight: bold;
+            padding: 12px;
+            margin-bottom: 25px;
+        }
+
+        .nav-item {
+            display: block;
+            padding: 13px 15px;
+            margin-bottom: 7px;
+            border-radius: 10px;
+            color: #d1d5db;
+            text-decoration: none;
+        }
+
+        .nav-item:hover {
+            background: #1f2937;
+            color: white;
+        }
+
+        .nav-item.active {
+            background: #2563eb;
+            color: white;
+        }
+
+        /* MAIN */
+
+        .main {
+            margin-left: 240px;
+            padding: 30px;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        h1 {
+            font-size: 30px;
+            color: #111827;
+        }
+
+        .subtitle {
+            color: #6b7280;
+            margin-top: 6px;
+        }
+
+        /* BUTTON */
+
+        .add-btn {
+            border: none;
+            background: #2563eb;
+            color: white;
+            padding: 13px 20px;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .add-btn:hover {
+            background: #1d4ed8;
+        }
+
+        /* FLASH */
+
+        .message {
+            padding: 14px 18px;
+            border-radius: 10px;
+            margin-bottom: 12px;
+            font-weight: bold;
+        }
+
+        .message.success {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .message.error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        /* SEARCH */
+
+        .search-box {
+            background: white;
+            padding: 18px;
+            border-radius: 14px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 13px;
+            border: 1px solid #d1d5db;
+            border-radius: 9px;
+            outline: none;
+            font-size: 14px;
+        }
+
+        .search-input:focus {
+            border-color: #2563eb;
+        }
+
+        /* TABLE */
+
+        .table-container {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 850px;
+        }
+
+        th {
+            background: #f3f4f6;
+            padding: 15px;
+            text-align: left;
+            font-size: 13px;
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 14px;
+        }
+
+        tr:hover {
+            background: #f9fafb;
+        }
+
+        .class-name {
+            font-weight: bold;
+        }
+
+        /* BADGES */
+
+        .badge {
+            display: inline-block;
+            padding: 6px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .year {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        .section {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .semester {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .department {
+            background: #f3e8ff;
+            color: #7e22ce;
+        }
+
+        /* ACTION BUTTONS */
+
+        .edit-btn {
+            border: none;
+            background: #f59e0b;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 7px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .edit-btn:hover {
+            background: #d97706;
+        }
+
+        .delete-btn {
+            border: none;
+            background: #ef4444;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 7px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-left: 5px;
+        }
+
+        .delete-btn:hover {
+            background: #dc2626;
+        }
+
+        /* MODAL */
+
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.55);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            width: 620px;
+            max-width: 100%;
+            border-radius: 17px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .modal-header h2 {
+            font-size: 22px;
+        }
+
+        .close-btn {
+            border: none;
+            background: none;
+            font-size: 30px;
+            cursor: pointer;
+        }
+
+        /* FORM */
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .full {
+            grid-column: 1 / -1;
+        }
+
+        label {
+            font-size: 13px;
+            font-weight: bold;
+            margin-bottom: 7px;
+        }
+
+        input,
+        select {
+            padding: 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            outline: none;
+        }
+
+        input:focus,
+        select:focus {
+            border-color: #2563eb;
+        }
+
+        /* FORM ACTIONS */
+
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 25px;
+        }
+
+        .cancel-btn {
+            border: none;
+            background: #e5e7eb;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .save-btn {
+            border: none;
+            background: #2563eb;
+            color: white;
+            padding: 12px 22px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        /* EMPTY */
+
+        .empty {
+            text-align: center;
+            padding: 50px;
+            color: #6b7280;
+        }
+
+        .empty-icon {
+            font-size: 45px;
+            margin-bottom: 10px;
+        }
+
+        /* MOBILE */
+
+        @media(max-width: 700px) {
+
+            .sidebar {
+                position: relative;
+                width: 100%;
+                height: auto;
+            }
+
+            .main {
+                margin-left: 0;
+                padding: 20px;
+            }
+
+            .topbar {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .full {
+                grid-column: auto;
+            }
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<!-- SIDEBAR -->
+
+<div class="sidebar">
+
+    <div class="logo">
+        📚 TimeTable
+    </div>
+
+    <a href="/" class="nav-item">
+        🏠 Dashboard
+    </a>
+
+    <a href="/faculty" class="nav-item">
+        👨‍🏫 Faculty
+    </a>
+
+    <a href="/subjects" class="nav-item">
+        📚 Subjects
+    </a>
+
+    <a href="/classes" class="nav-item active">
+        🏫 Classes
+    </a>
+
+    <a href="#" class="nav-item">
+        🚪 Rooms
+    </a>
+
+    <a href="#" class="nav-item">
+        ⏰ Time Slots
+    </a>
+
+    <a href="#" class="nav-item">
+        📅 Timetable
+    </a>
+
+</div>
+
+
+<!-- MAIN -->
+
+<div class="main">
+
+
+    <div class="topbar">
+
+        <div>
+
+            <h1>
+                Class Management
+            </h1>
+
+            <p class="subtitle">
+                Manage classes, sections, years and semesters.
+            </p>
+
+        </div>
+
+
+        <button
+            class="add-btn"
+            onclick="openAddModal()">
+
+            ➕ Add Class
+
+        </button>
+
+    </div>
+
+
+    <!-- FLASH MESSAGES -->
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+
+        {% for category, message in messages %}
+
+            <div class="message {{ category }}">
+                {{ message }}
+            </div>
+
+        {% endfor %}
+
+    {% endwith %}
+
+
+    <!-- SEARCH -->
+
+    <div class="search-box">
+
+        <input
+            type="text"
+            id="searchInput"
+            class="search-input"
+            placeholder="🔍 Search class, section or department...">
+
+    </div>
+
+
+    <!-- TABLE -->
+
+    <div class="table-container">
+
+        <table id="classTable">
+
+            <thead>
+
+                <tr>
+
+                    <th>Class</th>
+
+                    <th>Year</th>
+
+                    <th>Section</th>
+
+                    <th>Semester</th>
+
+                    <th>Department</th>
+
+                    <th>Actions</th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+                {% for item in classes_list %}
+
+                <tr>
+
+                    <td>
+
+                        <span class="class-name">
+
+                            {{ item.class_name }}
+
+                        </span>
+
+                    </td>
+
+
+                    <td>
+
+                        <span class="badge year">
+
+                            Year {{ item.year }}
+
+                        </span>
+
+                    </td>
+
+
+                    <td>
+
+                        <span class="badge section">
+
+                            {{ item.section }}
+
+                        </span>
+
+                    </td>
+
+
+                    <td>
+
+                        <span class="badge semester">
+
+                            Semester {{ item.semester }}
+
+                        </span>
+
+                    </td>
+
+
+                    <td>
+
+                        {% if item.department_name %}
+
+                            <span class="badge department">
+
+                                {{ item.department_code }}
+
+                            </span>
+
+                        {% else %}
+
+                            Not Assigned
+
+                        {% endif %}
+
+                    </td>
+
+
+                    <td>
+
+                        <button
+                            class="edit-btn"
+                            onclick='editClass(
+                                {{ item.class_id }},
+                                {{ item.class_name|tojson }},
+                                {{ item.year }},
+                                {{ item.section|tojson }},
+                                {{ item.semester }},
+                                {{ item.department_id if item.department_id else "null" }}
+                            )'>
+
+                            ✏️ Edit
+
+                        </button>
+
+
+                        <button
+                            class="delete-btn"
+                            onclick="deleteClass({{ item.class_id }})">
+
+                            🗑️ Delete
+
+                        </button>
+
+                    </td>
+
+                </tr>
+
+
+                {% else %}
+
+                <tr>
+
+                    <td colspan="6" class="empty">
+
+                        <div class="empty-icon">
+                            🏫
+                        </div>
+
+                        <strong>
+                            No classes found
+                        </strong>
+
+                        <p>
+                            Click "Add Class" to create your first class.
+                        </p>
+
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+
+<!-- MODAL -->
+
+<div
+    class="modal"
+    id="classModal">
+
+
+    <div class="modal-content">
+
+
+        <div class="modal-header">
+
+            <h2 id="modalTitle">
+                Add Class
+            </h2>
+
+            <button
+                class="close-btn"
+                onclick="closeModal()">
+
+                ×
+
+            </button>
+
+        </div>
+
+
+        <form
+            method="POST"
+            action="/classes/save">
+
+
+            <input
+                type="hidden"
+                name="class_id"
+                id="class_id">
+
+
+            <div class="form-grid">
+
+
+                <!-- CLASS NAME -->
+
+                <div class="form-group full">
+
+                    <label>
+                        Class Name *
+                    </label>
+
+                    <input
+                        type="text"
+                        name="class_name"
+                        id="class_name"
+                        placeholder="Example: B.Tech CSE 3"
+                        required>
+
+                </div>
+
+
+                <!-- YEAR -->
+
+                <div class="form-group">
+
+                    <label>
+                        Year *
+                    </label>
+
+                    <select
+                        name="year"
+                        id="year"
+                        required>
+
+                        <option value="">
+                            Select Year
+                        </option>
+
+                        <option value="1">
+                            1st Year
+                        </option>
+
+                        <option value="2">
+                            2nd Year
+                        </option>
+
+                        <option value="3">
+                            3rd Year
+                        </option>
+
+                        <option value="4">
+                            4th Year
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <!-- SECTION -->
+
+                <div class="form-group">
+
+                    <label>
+                        Section *
+                    </label>
+
+                    <input
+                        type="text"
+                        name="section"
+                        id="section"
+                        placeholder="Example: A"
+                        maxlength="20"
+                        required>
+
+                </div>
+
+
+                <!-- SEMESTER -->
+
+                <div class="form-group">
+
+                    <label>
+                        Semester *
+                    </label>
+
+                    <select
+                        name="semester"
+                        id="semester"
+                        required>
+
+                        <option value="">
+                            Select Semester
+                        </option>
+
+                        <option value="1">Semester 1</option>
+                        <option value="2">Semester 2</option>
+                        <option value="3">Semester 3</option>
+                        <option value="4">Semester 4</option>
+                        <option value="5">Semester 5</option>
+                        <option value="6">Semester 6</option>
+                        <option value="7">Semester 7</option>
+                        <option value="8">Semester 8</option>
+
+                    </select>
+
+                </div>
+
+
+                <!-- DEPARTMENT -->
+
+                <div class="form-group">
+
+                    <label>
+                        Department
+                    </label>
+
+                    <select
+                        name="department_id"
+                        id="department_id">
+
+                        <option value="">
+                            Select Department
+                        </option>
+
+
+                        {% for department in departments %}
+
+                        <option
+                            value="{{ department.department_id }}">
+
+                            {{ department.department_name }}
+                            ({{ department.department_code }})
+
+                        </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+            </div>
+
+
+            <div class="form-actions">
+
+                <button
+                    type="button"
+                    class="cancel-btn"
+                    onclick="closeModal()">
+
+                    Cancel
+
+                </button>
+
+
+                <button
+                    type="submit"
+                    class="save-btn">
+
+                    💾 Save Class
+
+                </button>
+
+            </div>
+
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<script>
+
+    /* OPEN ADD MODAL */
+
+    function openAddModal() {
+
+        document.getElementById("class_id").value = "";
+
+        document.getElementById("class_name").value = "";
+
+        document.getElementById("year").value = "";
+
+        document.getElementById("section").value = "";
+
+        document.getElementById("semester").value = "";
+
+        document.getElementById("department_id").value = "";
+
+        document.getElementById("modalTitle").innerText =
+            "Add Class";
+
+        document.getElementById("classModal")
+            .classList.add("show");
+
+    }
+
+
+    /* CLOSE MODAL */
+
+    function closeModal() {
+
+        document.getElementById("classModal")
+            .classList.remove("show");
+
+    }
+
+
+    /* EDIT CLASS */
+
+    function editClass(
+        id,
+        className,
+        year,
+        section,
+        semester,
+        departmentId
+    ) {
+
+        document.getElementById("class_id").value =
+            id;
+
+        document.getElementById("class_name").value =
+            className;
+
+        document.getElementById("year").value =
+            year;
+
+        document.getElementById("section").value =
+            section;
+
+        document.getElementById("semester").value =
+            semester;
+
+        document.getElementById("department_id").value =
+            departmentId || "";
+
+        document.getElementById("modalTitle").innerText =
+            "Edit Class";
+
+        document.getElementById("classModal")
+            .classList.add("show");
+
+    }
+
+
+    /* DELETE CLASS */
+
+    function deleteClass(id) {
+
+        if (
+            confirm(
+                "Are you sure you want to delete this class?"
+            )
+        ) {
+
+            window.location.href =
+                "/classes/delete/" + id;
+
+        }
+
+    }
+
+
+    /* SEARCH */
+
+    document
+        .getElementById("searchInput")
+        .addEventListener(
+            "keyup",
+            function () {
+
+                let search =
+                    this.value.toLowerCase();
+
+                let rows =
+                    document.querySelectorAll(
+                        "#classTable tbody tr"
+                    );
+
+                rows.forEach(
+                    function(row) {
+
+                        let text =
+                            row.innerText.toLowerCase();
+
+                        if (
+                            text.includes(search)
+                        ) {
+
+                            row.style.display = "";
+
+                        } else {
+
+                            row.style.display = "none";
+
+                        }
+
+                    }
+                );
+
+            }
+        );
+
+
+    /* CLOSE WHEN CLICKING OUTSIDE */
+
+    document
+        .getElementById("classModal")
+        .addEventListener(
+            "click",
+            function(event) {
+
+                if (
+                    event.target === this
+                ) {
+
+                    closeModal();
+
+                }
+
+            }
+        );
+
+</script>
+
+
+</body>
+
+</html>

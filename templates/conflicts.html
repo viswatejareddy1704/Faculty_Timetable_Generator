@@ -1,0 +1,668 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Timetable Conflicts</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 30px;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f1f5f9;
+            color: #102a43;
+        }
+
+        .container {
+            max-width: 1500px;
+            margin: auto;
+        }
+
+        /* HEADER */
+
+        .header {
+            background: white;
+            border-radius: 24px;
+            padding: 35px 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .header-left h1 {
+            margin: 0;
+            font-size: 42px;
+            color: #102a43;
+        }
+
+        .header-left p {
+            margin-top: 10px;
+            margin-bottom: 0;
+            color: #58708a;
+            font-size: 18px;
+        }
+
+        .header-buttons {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .btn {
+            text-decoration: none;
+            border: none;
+            padding: 15px 24px;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            display: inline-block;
+            transition: 0.2s;
+            font-family: inherit;
+        }
+
+        .btn-dashboard {
+            background: #e8edf3;
+            color: #102a43;
+        }
+
+        .btn-timetable {
+            background: #2563eb;
+            color: white;
+        }
+
+        .btn-regenerate {
+            background: #16a34a;
+            color: white;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        /* SUMMARY CARDS */
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .summary-card {
+            background: white;
+            border-radius: 22px;
+            padding: 28px;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.07);
+            min-height: 160px;
+        }
+
+        .summary-icon {
+            font-size: 34px;
+            margin-bottom: 10px;
+        }
+
+        .summary-number {
+            font-size: 38px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .summary-label {
+            color: #58708a;
+            font-size: 17px;
+        }
+
+        .success-number {
+            color: #16a34a;
+        }
+
+        .warning-number {
+            color: #dc2626;
+        }
+
+        /* MAIN PANEL */
+
+        .panel {
+            background: white;
+            border-radius: 24px;
+            padding: 35px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.07);
+        }
+
+        .panel h2 {
+            margin-top: 0;
+            font-size: 28px;
+        }
+
+        /* SUCCESS MESSAGE */
+
+        .success-box {
+            text-align: center;
+            padding: 45px 20px;
+            border-radius: 20px;
+            background: #ecfdf5;
+            border: 2px solid #86efac;
+        }
+
+        .success-box .big-icon {
+            font-size: 60px;
+            margin-bottom: 15px;
+        }
+
+        .success-box h2 {
+            color: #15803d;
+            margin-bottom: 10px;
+        }
+
+        .success-box p {
+            color: #166534;
+            font-size: 17px;
+        }
+
+        /* CONFLICT TABLE */
+
+        .conflict-table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th {
+            background: #111827;
+            color: white;
+            padding: 15px;
+            text-align: left;
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        tr:hover {
+            background: #f8fafc;
+        }
+
+        .conflict-badge {
+            display: inline-block;
+            padding: 7px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .faculty-badge {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .room-badge {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .class-badge {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        /* CHECKS */
+
+        .checks-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 18px;
+        }
+
+        .check-card {
+            padding: 22px;
+            border-radius: 18px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+        }
+
+        .check-card h3 {
+            margin-top: 0;
+            margin-bottom: 8px;
+        }
+
+        .check-card p {
+            margin-bottom: 0;
+            color: #58708a;
+            line-height: 1.6;
+        }
+
+        /* FOOTER */
+
+        .footer {
+            text-align: center;
+            padding: 25px;
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        /* MOBILE */
+
+        @media (max-width: 1000px) {
+            .summary-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+
+        @media (max-width: 650px) {
+            body {
+                padding: 15px;
+            }
+
+            .header-left h1 {
+                font-size: 30px;
+            }
+
+            .summary-grid,
+            .checks-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .panel {
+                padding: 22px;
+            }
+
+            .header {
+                padding: 25px;
+            }
+
+            .btn {
+                width: 100%;
+                text-align: center;
+            }
+
+            .header-buttons {
+                width: 100%;
+            }
+
+            .header-buttons form {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <!-- HEADER -->
+
+    <div class="header">
+
+        <div class="header-left">
+
+            <h1>⚠️ Timetable Conflicts</h1>
+
+            <p>
+                Faculty Automatic Timetable Generation System
+            </p>
+
+        </div>
+
+        <div class="header-buttons">
+
+            <!-- DASHBOARD -->
+
+            <a href="{{ url_for('dashboard') }}"
+               class="btn btn-dashboard">
+
+                ← Dashboard
+
+            </a>
+
+            <!-- TIMETABLE -->
+
+            <a href="{{ url_for('timetable') }}"
+               class="btn btn-timetable">
+
+                📅 View Timetable
+
+            </a>
+
+            <!-- ADMIN ONLY: REGENERATE -->
+
+            {% if session.get('role', '').upper() == 'ADMIN' %}
+
+                <form action="{{ url_for('generate') }}"
+                      method="POST"
+                      style="display:inline;">
+
+                    <button type="submit"
+                            class="btn btn-regenerate">
+
+                        ⚡ Regenerate Timetable
+
+                    </button>
+
+                </form>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+
+    <!-- SUMMARY CARDS -->
+
+    <div class="summary-grid">
+
+        <!-- TOTAL CONFLICTS -->
+
+        <div class="summary-card">
+
+            <div class="summary-icon">⚠️</div>
+
+            <div class="summary-number
+                {% if total_conflicts > 0 %}
+                    warning-number
+                {% else %}
+                    success-number
+                {% endif %}">
+
+                {{ total_conflicts }}
+
+            </div>
+
+            <div class="summary-label">
+                Total Conflicts
+            </div>
+
+        </div>
+
+
+        <!-- FACULTY CONFLICTS -->
+
+        <div class="summary-card">
+
+            <div class="summary-icon">👨‍🏫</div>
+
+            <div class="summary-number
+                {% if faculty_conflicts > 0 %}
+                    warning-number
+                {% else %}
+                    success-number
+                {% endif %}">
+
+                {{ faculty_conflicts }}
+
+            </div>
+
+            <div class="summary-label">
+                Faculty Conflicts
+            </div>
+
+        </div>
+
+
+        <!-- ROOM CONFLICTS -->
+
+        <div class="summary-card">
+
+            <div class="summary-icon">🏫</div>
+
+            <div class="summary-number
+                {% if room_conflicts > 0 %}
+                    warning-number
+                {% else %}
+                    success-number
+                {% endif %}">
+
+                {{ room_conflicts }}
+
+            </div>
+
+            <div class="summary-label">
+                Room Conflicts
+            </div>
+
+        </div>
+
+
+        <!-- CLASS CONFLICTS -->
+
+        <div class="summary-card">
+
+            <div class="summary-icon">🎓</div>
+
+            <div class="summary-number
+                {% if class_conflicts > 0 %}
+                    warning-number
+                {% else %}
+                    success-number
+                {% endif %}">
+
+                {{ class_conflicts }}
+
+            </div>
+
+            <div class="summary-label">
+                Class Conflicts
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- CONFLICT ANALYSIS -->
+
+    <div class="panel">
+
+        <h2>🔍 Conflict Analysis</h2>
+
+        {% if total_conflicts == 0 %}
+
+            <div class="success-box">
+
+                <div class="big-icon">
+                    ✅
+                </div>
+
+                <h2>
+                    No timetable conflicts detected.
+                </h2>
+
+                <p>🎉</p>
+
+                <h2>
+                    Timetable is Conflict-Free
+                </h2>
+
+                <p>
+                    The generated timetable currently has
+                    no detected faculty, classroom, or class
+                    scheduling conflicts.
+                </p>
+
+            </div>
+
+        {% else %}
+
+            <div class="conflict-table-wrapper">
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+                            <th>Conflict Type</th>
+                            <th>Day</th>
+                            <th>Period</th>
+                            <th>Details</th>
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        {% for conflict in conflicts %}
+
+                        <tr>
+
+                            <td>
+
+                                {% if conflict.type == "FACULTY" %}
+
+                                    <span class="conflict-badge faculty-badge">
+                                        👨‍🏫 Faculty Conflict
+                                    </span>
+
+                                {% elif conflict.type == "ROOM" %}
+
+                                    <span class="conflict-badge room-badge">
+                                        🏫 Room Conflict
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="conflict-badge class-badge">
+                                        🎓 Class Conflict
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+                                {{ conflict.day }}
+                            </td>
+
+                            <td>
+                                Period {{ conflict.period }}
+                            </td>
+
+                            <td>
+                                {{ conflict.details }}
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        {% endif %}
+
+    </div>
+
+
+    <!-- WHAT IS CHECKED -->
+
+    <div class="panel">
+
+        <h2>🧠 What is checked?</h2>
+
+        <div class="checks-grid">
+
+            <div class="check-card">
+
+                <h3>👨‍🏫 Faculty Clash</h3>
+
+                <p>
+                    The same faculty member should not teach
+                    two classes during the same time slot.
+                </p>
+
+            </div>
+
+
+            <div class="check-card">
+
+                <h3>🏫 Room Clash</h3>
+
+                <p>
+                    The same room should not be assigned
+                    to multiple classes during the same time slot.
+                </p>
+
+            </div>
+
+
+            <div class="check-card">
+
+                <h3>🎓 Class Clash</h3>
+
+                <p>
+                    The same class should not have two
+                    subjects scheduled during the same time slot.
+                </p>
+
+            </div>
+
+
+            <div class="check-card">
+
+                <h3>⏰ Availability</h3>
+
+                <p>
+                    Faculty availability is considered
+                    by the timetable generation process.
+                </p>
+
+            </div>
+
+
+            <div class="check-card">
+
+                <h3>🔬 Laboratory</h3>
+
+                <p>
+                    Laboratory subjects are assigned to
+                    laboratory rooms.
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- FOOTER -->
+
+    <div class="footer">
+
+        Faculty Automatic Timetable Generation System
+        • OR-Tools Constraint Solver
+
+    </div>
+
+</div>
+
+</body>
+</html>

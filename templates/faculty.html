@@ -1,0 +1,612 @@
+
+{% extends "base.html" %}
+
+{% block title %}Faculty Management{% endblock %}
+
+{% block header_title %}Faculty Management{% endblock %}
+
+{% block header_subtitle %}
+View faculty members and teaching assignments.
+{% endblock %}
+
+{% block content %}
+
+<style>
+    .faculty-page {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .faculty-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-bottom: 22px;
+    }
+
+    .faculty-toolbar p {
+        color: #6b7280;
+        font-size: 14px;
+    }
+
+    .faculty-add-btn {
+        background: #2563eb;
+        color: white;
+        padding: 12px 18px;
+    }
+
+    .faculty-add-btn:hover {
+        background: #1d4ed8;
+    }
+
+    .faculty-search-card {
+        background: white;
+        padding: 18px;
+        border-radius: 14px;
+        margin-bottom: 20px;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 3px 12px rgba(0,0,0,.04);
+    }
+
+    .faculty-search-card input {
+        width: 100%;
+    }
+
+    .faculty-table-card {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: 0 3px 12px rgba(0,0,0,.04);
+    }
+
+    .faculty-table-scroll {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    .faculty-table {
+        width: 100%;
+        min-width: 900px;
+        border-collapse: collapse;
+    }
+
+    .faculty-table th {
+        background: #f3f4f6;
+        padding: 14px;
+        text-align: left;
+        font-size: 13px;
+        white-space: nowrap;
+    }
+
+    .faculty-table td {
+        padding: 14px;
+        border-bottom: 1px solid #e5e7eb;
+        font-size: 14px;
+        vertical-align: middle;
+    }
+
+    .faculty-table tbody tr:hover td {
+        background: #f9fafb;
+    }
+
+    .faculty-badge {
+        display: inline-block;
+        background: #dbeafe;
+        color: #1d4ed8;
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: bold;
+    }
+
+    .faculty-no-data {
+        text-align: center;
+        padding: 40px !important;
+        color: #6b7280;
+    }
+
+    .faculty-edit-btn {
+        background: #f59e0b;
+        color: white;
+        padding: 8px 11px;
+        font-size: 12px;
+        margin: 2px;
+    }
+
+    .faculty-edit-btn:hover {
+        background: #d97706;
+    }
+
+    .faculty-delete-btn {
+        background: #ef4444;
+        color: white;
+        padding: 8px 11px;
+        font-size: 12px;
+        margin: 2px;
+    }
+
+    .faculty-delete-btn:hover {
+        background: #dc2626;
+    }
+
+    .faculty-actions {
+        white-space: nowrap;
+    }
+
+    .faculty-view-note {
+        background: #eff6ff;
+        color: #1e40af;
+        padding: 12px 16px;
+        border-radius: 10px;
+        margin-bottom: 18px;
+        font-size: 14px;
+    }
+
+    /* Modal */
+    .faculty-modal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 2000;
+        background: rgba(0,0,0,.55);
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+
+    .faculty-modal.show {
+        display: flex;
+    }
+
+    .faculty-modal-content {
+        width: 600px;
+        max-width: 100%;
+        max-height: 90vh;
+        overflow-y: auto;
+        background: white;
+        border-radius: 16px;
+        padding: 28px;
+        box-shadow: 0 20px 50px rgba(0,0,0,.25);
+    }
+
+    .faculty-modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 24px;
+    }
+
+    .faculty-modal-header h2 {
+        font-size: 22px;
+        color: #111827;
+    }
+
+    .faculty-close-btn {
+        background: transparent;
+        color: #6b7280;
+        padding: 2px 8px;
+        font-size: 28px;
+    }
+
+    .faculty-form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 18px;
+    }
+
+    .faculty-form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+        min-width: 0;
+    }
+
+    .faculty-form-group label {
+        margin: 0;
+    }
+
+    .faculty-form-group input,
+    .faculty-form-group select {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .faculty-form-group.full {
+        grid-column: 1 / -1;
+    }
+
+    .faculty-form-actions {
+        display: flex;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 25px;
+    }
+
+    .faculty-cancel-btn {
+        background: #e5e7eb;
+        color: #374151;
+    }
+
+    .faculty-save-btn {
+        background: #2563eb;
+        color: white;
+    }
+
+    .faculty-save-btn:hover {
+        background: #1d4ed8;
+    }
+
+    @media (max-width: 600px) {
+        .faculty-form-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .faculty-form-group.full {
+            grid-column: auto;
+        }
+
+        .faculty-modal-content {
+            padding: 20px;
+        }
+    }
+</style>
+
+<div class="faculty-page">
+
+    <div class="faculty-toolbar">
+        <p>
+            {% if session.get('role', '').upper() == 'ADMIN' %}
+                View, search, add, edit and manage faculty members.
+            {% else %}
+                View and search all faculty members and their details.
+            {% endif %}
+        </p>
+
+        {% if session.get('role', '').upper() == 'ADMIN' %}
+        <button
+            type="button"
+            class="faculty-add-btn"
+            id="addFacultyButton">
+            ➕ Add Faculty
+        </button>
+        {% endif %}
+    </div>
+
+    {% if session.get('role', '').upper() != 'ADMIN' %}
+    <div class="faculty-view-note">
+        👁️ Staff access: You can view and search faculty information. Only Admin can add, edit or delete faculty records.
+    </div>
+    {% endif %}
+
+    <!-- Search -->
+    <div class="faculty-search-card">
+        <input
+            type="search"
+            id="searchFaculty"
+            placeholder="🔍 Search by name, employee ID, email or department..."
+            autocomplete="off"
+            aria-label="Search faculty">
+    </div>
+
+    <!-- Faculty table -->
+    <div class="faculty-table-card">
+        <div class="faculty-table-scroll">
+            <table class="faculty-table" id="facultyTable">
+                <thead>
+                    <tr>
+                        <th>Employee ID</th>
+                        <th>Faculty Name</th>
+                        <th>Email</th>
+                        <th>Designation</th>
+                        <th>Department</th>
+                        <th>Max Classes/Day</th>
+
+                        {% if session.get('role', '').upper() == 'ADMIN' %}
+                        <th>Actions</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+
+                <tbody id="facultyTableBody">
+
+                    {% for faculty_member in faculty %}
+                    <tr>
+                        <td>
+                            <strong>{{ faculty_member.employee_id }}</strong>
+                        </td>
+
+                        <td>{{ faculty_member.faculty_name }}</td>
+
+                        <td>{{ faculty_member.email or '-' }}</td>
+
+                        <td>{{ faculty_member.designation or '-' }}</td>
+
+                        <td>
+                            {% if faculty_member.department_name %}
+                                <span class="faculty-badge">
+                                    {{ faculty_member.department_name }}
+                                </span>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+
+                        <td>{{ faculty_member.max_classes_per_day }}</td>
+
+                        {% if session.get('role', '').upper() == 'ADMIN' %}
+                        <td class="faculty-actions">
+
+                            <button
+                                type="button"
+                                class="faculty-edit-btn edit-faculty-btn"
+                                data-id="{{ faculty_member.faculty_id }}"
+                                data-name="{{ faculty_member.faculty_name }}"
+                                data-employee="{{ faculty_member.employee_id }}"
+                                data-email="{{ faculty_member.email or '' }}"
+                                data-phone="{{ faculty_member.phone or '' }}"
+                                data-designation="{{ faculty_member.designation or '' }}"
+                                data-department="{{ faculty_member.department_id or '' }}"
+                                data-max="{{ faculty_member.max_classes_per_day or 4 }}">
+                                ✏️ Edit
+                            </button>
+
+                            <button
+                                type="button"
+                                class="faculty-delete-btn delete-faculty-btn"
+                                data-id="{{ faculty_member.faculty_id }}">
+                                🗑️ Delete
+                            </button>
+
+                        </td>
+                        {% endif %}
+                    </tr>
+
+                    {% else %}
+                    <tr id="noFacultyRow">
+                        <td
+                            colspan="{{ 7 if session.get('role', '').upper() == 'ADMIN' else 6 }}"
+                            class="faculty-no-data">
+                            No faculty members found.
+                        </td>
+                    </tr>
+                    {% endfor %}
+
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<!-- Add/Edit Faculty Modal: Admin only -->
+{% if session.get('role', '').upper() == 'ADMIN' %}
+<div
+    class="faculty-modal"
+    id="facultyModal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="modalTitle">
+
+    <div class="faculty-modal-content">
+
+        <div class="faculty-modal-header">
+            <h2 id="modalTitle">Add Faculty</h2>
+
+            <button
+                type="button"
+                class="faculty-close-btn"
+                id="closeModalButton"
+                aria-label="Close dialog">
+                ×
+            </button>
+        </div>
+
+        <form
+            method="POST"
+            action="{{ url_for('save_faculty') }}"
+            id="facultyForm">
+
+            <input type="hidden" name="faculty_id" id="faculty_id">
+
+            <div class="faculty-form-grid">
+
+                <div class="faculty-form-group">
+                    <label for="faculty_name">Faculty Name *</label>
+                    <input
+                        type="text"
+                        name="faculty_name"
+                        id="faculty_name"
+                        required>
+                </div>
+
+                <div class="faculty-form-group">
+                    <label for="employee_id">Employee ID *</label>
+                    <input
+                        type="text"
+                        name="employee_id"
+                        id="employee_id"
+                        required>
+                </div>
+
+                <div class="faculty-form-group">
+                    <label for="email">Email</label>
+                    <input
+                        type="email"
+                        name="email"
+                        id="email">
+                </div>
+
+                <div class="faculty-form-group">
+                    <label for="phone">Phone</label>
+                    <input
+                        type="text"
+                        name="phone"
+                        id="phone">
+                </div>
+
+                <div class="faculty-form-group">
+                    <label for="designation">Designation</label>
+                    <select name="designation" id="designation">
+                        <option value="">Select Designation</option>
+                        <option value="Professor">Professor</option>
+                        <option value="Associate Professor">Associate Professor</option>
+                        <option value="Assistant Professor">Assistant Professor</option>
+                        <option value="Lecturer">Lecturer</option>
+                    </select>
+                </div>
+
+                <div class="faculty-form-group">
+                    <label for="department_id">Department</label>
+                    <select name="department_id" id="department_id">
+                        <option value="">Select Department</option>
+
+                        {% for department in departments %}
+                        <option value="{{ department.department_id }}">
+                            {{ department.department_name }}
+                        </option>
+                        {% endfor %}
+
+                    </select>
+                </div>
+
+                <div class="faculty-form-group full">
+                    <label for="max_classes_per_day">
+                        Maximum Classes Per Day
+                    </label>
+
+                    <input
+                        type="number"
+                        name="max_classes_per_day"
+                        id="max_classes_per_day"
+                        value="4"
+                        min="1"
+                        max="12">
+                </div>
+
+            </div>
+
+            <div class="faculty-form-actions">
+
+                <button
+                    type="button"
+                    class="faculty-cancel-btn"
+                    id="cancelModalButton">
+                    Cancel
+                </button>
+
+                <button type="submit" class="faculty-save-btn">
+                    Save Faculty
+                </button>
+
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<script>
+(function () {
+    const searchInput = document.getElementById("searchFaculty");
+    const tableBody = document.getElementById("facultyTableBody");
+
+    if (!searchInput || !tableBody) return;
+
+    // Search faculty rows for both Admin and Staff
+    searchInput.addEventListener("input", function () {
+        const query = searchInput.value.toLowerCase().trim();
+        const rows = tableBody.querySelectorAll("tr");
+
+        rows.forEach(function (row) {
+            if (row.id === "noFacultyRow") return;
+
+            row.style.display =
+                row.textContent.toLowerCase().includes(query) ? "" : "none";
+        });
+    });
+
+    // Admin-only modal and management actions
+    const modal = document.getElementById("facultyModal");
+    const addButton = document.getElementById("addFacultyButton");
+    const closeButton = document.getElementById("closeModalButton");
+    const cancelButton = document.getElementById("cancelModalButton");
+    const form = document.getElementById("facultyForm");
+    const modalTitle = document.getElementById("modalTitle");
+
+    if (!modal || !addButton || !form) return;
+
+    function openModal() {
+        modal.classList.add("show");
+
+        const firstInput = document.getElementById("faculty_name");
+        if (firstInput) firstInput.focus();
+    }
+
+    function closeModal() {
+        modal.classList.remove("show");
+    }
+
+    function resetFacultyForm() {
+        form.reset();
+        document.getElementById("faculty_id").value = "";
+        document.getElementById("max_classes_per_day").value = "4";
+        modalTitle.textContent = "Add Faculty";
+    }
+
+    addButton.addEventListener("click", function () {
+        resetFacultyForm();
+        openModal();
+    });
+
+    closeButton.addEventListener("click", closeModal);
+    cancelButton.addEventListener("click", closeModal);
+
+    modal.addEventListener("click", function (event) {
+        if (event.target === modal) closeModal();
+    });
+
+    // Edit faculty
+    document.querySelectorAll(".edit-faculty-btn").forEach(function (button) {
+        button.addEventListener("click", function () {
+            document.getElementById("faculty_id").value = button.dataset.id || "";
+            document.getElementById("faculty_name").value = button.dataset.name || "";
+            document.getElementById("employee_id").value = button.dataset.employee || "";
+            document.getElementById("email").value = button.dataset.email || "";
+            document.getElementById("phone").value = button.dataset.phone || "";
+            document.getElementById("designation").value = button.dataset.designation || "";
+            document.getElementById("department_id").value = button.dataset.department || "";
+            document.getElementById("max_classes_per_day").value = button.dataset.max || "4";
+
+            modalTitle.textContent = "Edit Faculty";
+            openModal();
+        });
+    });
+
+    // Delete faculty using the existing route
+    document.querySelectorAll(".delete-faculty-btn").forEach(function (button) {
+        button.addEventListener("click", function () {
+            const facultyId = button.dataset.id;
+
+            if (!confirm("Are you sure you want to delete this faculty member?")) {
+                return;
+            }
+
+            window.location.href =
+                "/faculty/delete/" + encodeURIComponent(facultyId);
+        });
+    });
+
+    // Close modal with Escape
+    document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape" && modal.classList.contains("show")) {
+            closeModal();
+        }
+    });
+})();
+</script>
+
+{% endblock %}

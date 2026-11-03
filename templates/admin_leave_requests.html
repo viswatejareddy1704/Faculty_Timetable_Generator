@@ -1,0 +1,141 @@
+
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="leave-header">
+    <div>
+        <h1>Faculty Leave Requests</h1>
+        <p>Review, approve, or reject faculty leave applications.</p>
+    </div>
+</div>
+
+{% set pending_count = leave_requests | selectattr('status', 'equalto', 'PENDING') | list | length %}
+{% set approved_count = leave_requests | selectattr('status', 'equalto', 'APPROVED') | list | length %}
+{% set rejected_count = leave_requests | selectattr('status', 'equalto', 'REJECTED') | list | length %}
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <h3>Total Requests</h3>
+        <h2>{{ leave_requests | length }}</h2>
+    </div>
+
+    <div class="stat-card">
+        <h3>Pending</h3>
+        <h2>{{ pending_count }}</h2>
+    </div>
+
+    <div class="stat-card">
+        <h3>Approved</h3>
+        <h2>{{ approved_count }}</h2>
+    </div>
+
+    <div class="stat-card">
+        <h3>Rejected</h3>
+        <h2>{{ rejected_count }}</h2>
+    </div>
+</div>
+
+<div class="table-container">
+    <h2>All Leave Applications</h2>
+
+    {% if leave_requests %}
+
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Faculty</th>
+                    <th>Leave Type</th>
+                    <th>From</th>
+                    <th>To</th>
+                    <th>Reason</th>
+                    <th>Status</th>
+                    <th>Admin Remarks</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for leave in leave_requests %}
+                <tr>
+                    <td>{{ leave.leave_id }}</td>
+
+                    <td>
+                        <strong>{{ leave.faculty_name }}</strong>
+                        <br>
+                        <small>{{ leave.email }}</small>
+                    </td>
+
+                    <td>{{ leave.leave_type }}</td>
+                    <td>{{ leave.start_date }}</td>
+                    <td>{{ leave.end_date }}</td>
+                    <td>{{ leave.reason }}</td>
+
+                    <td>
+                        <span class="leave-status {{ leave.status | lower }}">
+                            {{ leave.status }}
+                        </span>
+                    </td>
+
+                    <td>
+                        {{ leave.admin_remarks or "—" }}
+                    </td>
+
+                    <td>
+                        {% if leave.status == 'PENDING' %}
+
+                        <form method="POST"
+                              action="{{ url_for('update_leave_request', leave_id=leave.leave_id) }}">
+
+                            <textarea
+                                name="admin_remarks"
+                                placeholder="Enter remarks (optional)"
+                                rows="2"></textarea>
+
+                            <div class="leave-actions">
+                                <button type="submit"
+                                        name="action"
+                                        value="APPROVED"
+                                        class="btn btn-success">
+                                    Approve
+                                </button>
+
+                                <button type="submit"
+                                        name="action"
+                                        value="REJECTED"
+                                        class="btn btn-danger"
+                                        onclick="return confirm('Are you sure you want to reject this leave request?')">
+                                    Reject
+                                </button>
+                            </div>
+                        </form>
+
+                        {% elif leave.status == 'APPROVED' %}
+
+                        <a href="{{ url_for('manage_substitutes', leave_id=leave.leave_id) }}"
+                           class="btn btn-primary">
+                            Manage Substitutes
+                        </a>
+
+                        {% else %}
+
+                        <span>Processed</span>
+
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% else %}
+
+    <p>No faculty leave requests found.</p>
+
+    {% endif %}
+</div>
+
+{% endblock %}

@@ -1,0 +1,500 @@
+
+{% extends "base.html" %}
+
+{% block title %}Subject Faculty Assignment{% endblock %}
+
+{% block header_title %}Subject–Faculty Assignment{% endblock %}
+
+{% block header_subtitle %}
+Assign faculty members to the subjects they teach.
+{% endblock %}
+
+{% block content %}
+
+{% set is_admin = session.get('role', '').upper() == 'ADMIN' %}
+
+<style>
+    .sf-page {
+        color: #1f2937;
+    }
+
+    .sf-page .stats {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 18px;
+        margin-bottom: 25px;
+    }
+
+    .sf-page .stat-card {
+        background: white;
+        padding: 22px;
+        border-radius: 16px;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
+    }
+
+    .sf-page .stat-icon {
+        font-size: 25px;
+        margin-bottom: 10px;
+    }
+
+    .sf-page .number {
+        font-size: 30px;
+        font-weight: bold;
+        color: #2563eb;
+        margin-bottom: 5px;
+    }
+
+    .sf-page .stat-card p {
+        color: #6b7280;
+        font-size: 13px;
+    }
+
+    .sf-page .card {
+        background: white;
+        border-radius: 18px;
+        padding: 25px;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+        margin-bottom: 25px;
+    }
+
+    .sf-page .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+
+    .sf-page .card-header h2 {
+        font-size: 20px;
+        margin: 0;
+    }
+
+    .sf-page .form-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+        gap: 18px;
+        align-items: end;
+    }
+
+    .sf-page label {
+        display: block;
+        font-size: 13px;
+        font-weight: bold;
+        margin-bottom: 8px;
+        color: #374151;
+    }
+
+    .sf-page select,
+    .sf-page input[type="search"] {
+        width: 100%;
+        min-width: 0;
+        padding: 13px;
+        border: 1px solid #d1d5db;
+        border-radius: 10px;
+        background: white;
+        font-size: 14px;
+    }
+
+    .sf-page select:focus,
+    .sf-page input[type="search"]:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+    .sf-page .btn {
+        display: inline-block;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 14px;
+        text-decoration: none;
+        transition: background 0.2s;
+    }
+
+    .sf-page .btn-primary {
+        background: #2563eb;
+        color: white;
+    }
+
+    .sf-page .btn-primary:hover {
+        background: #1d4ed8;
+    }
+
+    .sf-page .btn-danger {
+        background: #fee2e2;
+        color: #b91c1c;
+    }
+
+    .sf-page .btn-danger:hover {
+        background: #fecaca;
+    }
+
+    .sf-page .table-container {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    .sf-page table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .sf-page th {
+        text-align: left;
+        padding: 14px;
+        background: #f8fafc;
+        color: #64748b;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        white-space: nowrap;
+    }
+
+    .sf-page td {
+        padding: 16px 14px;
+        border-top: 1px solid #eef2f7;
+        font-size: 14px;
+    }
+
+    .sf-page tbody tr:hover {
+        background: #f8fafc;
+    }
+
+    .sf-page .code {
+        font-weight: bold;
+        color: #2563eb;
+    }
+
+    .sf-page .badge {
+        display: inline-block;
+        padding: 6px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: bold;
+    }
+
+    .sf-page .badge-theory {
+        background: #dbeafe;
+        color: #1d4ed8;
+    }
+
+    .sf-page .badge-lab {
+        background: #dcfce7;
+        color: #15803d;
+    }
+
+    .sf-page .empty {
+        text-align: center;
+        padding: 45px;
+        color: #9ca3af;
+    }
+
+    .sf-page .empty-icon {
+        font-size: 40px;
+        margin-bottom: 10px;
+    }
+
+    .sf-page .search-box {
+        width: 100%;
+        max-width: 350px;
+    }
+
+    .sf-page .staff-notice {
+        margin-bottom: 20px;
+        padding: 15px 18px;
+        background: #dbeafe;
+        border: 1px solid #bfdbfe;
+        border-left: 5px solid #3b82f6;
+        color: #1e40af;
+        border-radius: 12px;
+        font-weight: 600;
+    }
+
+    @media (max-width: 1000px) {
+        .sf-page .form-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .sf-page .stats {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 600px) {
+        .sf-page .stats {
+            grid-template-columns: 1fr;
+        }
+
+        .sf-page .card {
+            padding: 16px;
+        }
+
+        .sf-page .card-header h2 {
+            font-size: 18px;
+        }
+
+        .sf-page .search-box {
+            max-width: 100%;
+        }
+    }
+</style>
+
+<div class="sf-page">
+
+    <!-- FLASH MESSAGES -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div style="
+                    padding: 14px 18px;
+                    border-radius: 10px;
+                    margin-bottom: 20px;
+                    font-size: 14px;
+                    background: {% if category == 'success' %}#dcfce7{% else %}#fee2e2{% endif %};
+                    color: {% if category == 'success' %}#166534{% else %}#991b1b{% endif %};
+                    border-left: 4px solid {% if category == 'success' %}#22c55e{% else %}#ef4444{% endif %};
+                ">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- STAFF VIEW NOTICE -->
+    {% if not is_admin %}
+    <div class="staff-notice">
+        👁️ Staff View: You can view and search subject–faculty assignments. Only Admin can assign or remove faculty.
+    </div>
+    {% endif %}
+
+    <!-- STATISTICS -->
+    <div class="stats">
+
+        <div class="stat-card">
+            <div class="stat-icon">📘</div>
+            <div class="number">{{ subjects|length }}</div>
+            <p>Available Subjects</p>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon">👨‍🏫</div>
+            <div class="number">{{ faculty|length }}</div>
+            <p>Available Faculty</p>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon">🔗</div>
+            <div class="number">{{ assignments|length }}</div>
+            <p>Current Assignments</p>
+        </div>
+
+    </div>
+
+    <!-- ADMIN: ASSIGN FACULTY -->
+    {% if is_admin %}
+    <div class="card">
+
+        <div class="card-header">
+            <h2>➕ Assign Faculty</h2>
+        </div>
+
+        <form action="/subject-faculty/save" method="POST">
+
+            <div class="form-grid">
+
+                <div>
+                    <label for="subject_id">Select Subject</label>
+
+                    <select id="subject_id" name="subject_id" required>
+                        <option value="">-- Select Subject --</option>
+
+                        {% for subject in subjects %}
+                        <option value="{{ subject.subject_id }}">
+                            {{ subject.subject_code }} - {{ subject.subject_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label for="faculty_id">Select Faculty</label>
+
+                    <select id="faculty_id" name="faculty_id" required>
+                        <option value="">-- Select Faculty --</option>
+
+                        {% for member in faculty %}
+                        <option value="{{ member.faculty_id }}">
+                            {{ member.faculty_name }} ({{ member.employee_id }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    🔗 Assign Faculty
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+    {% endif %}
+
+    <!-- CURRENT ASSIGNMENTS -->
+    <div class="card">
+
+        <div class="card-header">
+            <h2>🔗 Current Assignments</h2>
+
+            <div class="search-box">
+                <input
+                    type="search"
+                    id="assignmentSearch"
+                    placeholder="🔍 Search subject or faculty..."
+                    aria-label="Search subject-faculty assignments"
+                >
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table id="assignmentTable">
+
+                <thead>
+                    <tr>
+                        <th>Subject</th>
+                        <th>Type</th>
+                        <th>Faculty</th>
+                        <th>Employee ID</th>
+
+                        {% if is_admin %}
+                        <th>Action</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+
+                <tbody id="assignmentTableBody">
+
+                    {% for item in assignments %}
+                    <tr class="assignment-row">
+
+                        <td>
+                            <span class="code">{{ item.subject_code }}</span>
+                            <br>
+                            {{ item.subject_name }}
+                        </td>
+
+                        <td>
+                            {% if item.subject_type == "LAB" %}
+                            <span class="badge badge-lab">LAB</span>
+                            {% else %}
+                            <span class="badge badge-theory">THEORY</span>
+                            {% endif %}
+                        </td>
+
+                        <td>{{ item.faculty_name }}</td>
+
+                        <td>{{ item.employee_id }}</td>
+
+                        {% if is_admin %}
+                        <td>
+                            <form
+                                action="/subject-faculty/delete/{{ item.subject_faculty_id }}"
+                                method="POST"
+                                onsubmit="return confirm('Remove this faculty assignment?');"
+                            >
+                                <button type="submit" class="btn btn-danger">
+                                    🗑 Remove
+                                </button>
+                            </form>
+                        </td>
+                        {% endif %}
+
+                    </tr>
+
+                    {% else %}
+                    <tr>
+                        <td colspan="{{ 5 if is_admin else 4 }}" class="empty">
+                            <div class="empty-icon">🔗</div>
+                            <div>No subject-faculty assignments found.</div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+
+                    <tr id="noSearchResults" style="display:none;">
+                        <td colspan="{{ 5 if is_admin else 4 }}" class="empty">
+                            No matching assignments found.
+                        </td>
+                    </tr>
+
+                </tbody>
+
+            </table>
+        </div>
+
+        <div style="
+            margin-top:15px;
+            color:#64748b;
+            font-size:13px;
+        ">
+            Showing <strong id="visibleCount">{{ assignments|length }}</strong>
+            of {{ assignments|length }} assignments.
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+(function () {
+
+    const searchInput = document.getElementById("assignmentSearch");
+    const tableBody = document.getElementById("assignmentTableBody");
+    const visibleCount = document.getElementById("visibleCount");
+    const noResults = document.getElementById("noSearchResults");
+
+    if (!searchInput || !tableBody) {
+        return;
+    }
+
+    function searchAssignments() {
+
+        const searchText = searchInput.value.trim().toLowerCase();
+
+        const rows = tableBody.querySelectorAll(".assignment-row");
+
+        let visible = 0;
+
+        rows.forEach(function (row) {
+
+            const rowText = row.textContent.toLowerCase();
+
+            const matches = rowText.includes(searchText);
+
+            row.style.display = matches ? "" : "none";
+
+            if (matches) {
+                visible++;
+            }
+
+        });
+
+        visibleCount.textContent = visible;
+
+        if (noResults) {
+            noResults.style.display =
+                visible === 0 && rows.length > 0 ? "" : "none";
+        }
+    }
+
+    searchInput.addEventListener("input", searchAssignments);
+
+})();
+</script>
+
+{% endblock %}

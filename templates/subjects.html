@@ -1,0 +1,628 @@
+
+{% extends "base.html" %}
+
+{% block title %}Subject Management{% endblock %}
+{% block header_title %}Subject Management{% endblock %}
+{% block header_subtitle %}View and manage subjects, labs, weekly hours and departments.{% endblock %}
+
+{% block content %}
+
+<style>
+.subject-page {
+    color: #1f2937;
+}
+
+.subject-page * {
+    box-sizing: border-box;
+}
+
+.subject-page .subject-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 20px;
+}
+
+.subject-page .add-btn {
+    background: #2563eb;
+    color: white;
+    border: none;
+    padding: 12px 18px;
+    border-radius: 9px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.subject-page .add-btn:hover {
+    background: #1d4ed8;
+}
+
+.subject-page .access-note {
+    background: #dbeafe;
+    color: #1e40af;
+    padding: 14px 18px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
+.subject-page .search-box,
+.subject-page .table-container {
+    background: white;
+    padding: 20px;
+    border-radius: 14px;
+    margin-bottom: 20px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.05);
+}
+
+.subject-page .search-box input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    outline: none;
+    font-size: 14px;
+}
+
+.subject-page .search-box input:focus,
+.subject-page .form-group input:focus,
+.subject-page .form-group select:focus {
+    border-color: #2563eb;
+}
+
+.subject-page .table-container {
+    overflow-x: auto;
+}
+
+.subject-page table {
+    width: 100%;
+    min-width: 750px;
+    border-collapse: collapse;
+}
+
+.subject-page th {
+    background: #f3f4f6;
+    padding: 14px;
+    text-align: left;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+.subject-page td {
+    padding: 14px;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 14px;
+}
+
+.subject-page tbody tr:hover {
+    background: #f9fafb;
+}
+
+.subject-page .badge {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.subject-page .theory {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.subject-page .lab {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.subject-page .dept {
+    background: #ede9fe;
+    color: #6d28d9;
+}
+
+.subject-page .no-data {
+    text-align: center;
+    padding: 40px !important;
+    color: #6b7280;
+}
+
+.subject-page .edit-btn,
+.subject-page .delete-btn {
+    color: white;
+    border: none;
+    padding: 8px 11px;
+    border-radius: 6px;
+    cursor: pointer;
+    margin: 2px;
+}
+
+.subject-page .edit-btn {
+    background: #f59e0b;
+}
+
+.subject-page .edit-btn:hover {
+    background: #d97706;
+}
+
+.subject-page .delete-btn {
+    background: #ef4444;
+}
+
+.subject-page .delete-btn:hover {
+    background: #dc2626;
+}
+
+/* Subject modal */
+.subject-page .subject-modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.subject-page .subject-modal.show {
+    display: flex;
+}
+
+.subject-page .modal-content {
+    width: 600px;
+    max-width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    background: white;
+    border-radius: 16px;
+    padding: 28px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+}
+
+.subject-page .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.subject-page .modal-header h2 {
+    font-size: 22px;
+}
+
+.subject-page .close-btn {
+    background: none;
+    border: none;
+    font-size: 28px;
+    cursor: pointer;
+    color: #6b7280;
+}
+
+.subject-page .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+}
+
+.subject-page .form-group {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.subject-page .form-group.full {
+    grid-column: 1 / -1;
+}
+
+.subject-page .form-group label {
+    margin-bottom: 7px;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.subject-page .form-group input,
+.subject-page .form-group select {
+    width: 100%;
+    padding: 11px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    outline: none;
+    font-size: 14px;
+    background: white;
+}
+
+.subject-page .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 25px;
+}
+
+.subject-page .cancel-btn,
+.subject-page .save-btn {
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.subject-page .cancel-btn {
+    background: #e5e7eb;
+    color: #374151;
+}
+
+.subject-page .save-btn {
+    background: #2563eb;
+    color: white;
+}
+
+.subject-page .save-btn:hover {
+    background: #1d4ed8;
+}
+
+@media (max-width: 600px) {
+    .subject-page .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .subject-page .form-group.full {
+        grid-column: auto;
+    }
+
+    .subject-page .modal-content {
+        padding: 20px;
+    }
+}
+</style>
+
+<div class="subject-page">
+
+    <!-- ADMIN ONLY: ADD SUBJECT BUTTON -->
+    {% if session.get('role', '').upper() == 'ADMIN' %}
+    <div class="subject-toolbar">
+        <button type="button" class="add-btn" id="addSubjectButton">
+            ➕ Add Subject
+        </button>
+    </div>
+    {% else %}
+    <div class="access-note">
+        👁️ <strong>Staff View:</strong>
+        You can view and search all subjects. Only Admin can add, edit or delete subjects.
+    </div>
+    {% endif %}
+
+    <!-- SEARCH: ADMIN AND STAFF -->
+    <div class="search-box">
+        <input
+            type="text"
+            id="searchSubject"
+            placeholder="🔍 Search subject by code, name or department..."
+            autocomplete="off"
+            aria-label="Search subjects">
+    </div>
+
+    <!-- SUBJECT TABLE -->
+    <div class="table-container">
+        <table id="subjectTable">
+            <thead>
+                <tr>
+                    <th>Code</th>
+                    <th>Subject Name</th>
+                    <th>Type</th>
+                    <th>Weekly Hours</th>
+                    <th>Department</th>
+
+                    {% if session.get('role', '').upper() == 'ADMIN' %}
+                    <th>Actions</th>
+                    {% endif %}
+                </tr>
+            </thead>
+
+            <tbody id="subjectTableBody">
+
+                {% for subject in subjects %}
+                <tr>
+                    <td>
+                        <strong>{{ subject.subject_code or '-' }}</strong>
+                    </td>
+
+                    <td>{{ subject.subject_name }}</td>
+
+                    <td>
+                        {% if subject.subject_type and subject.subject_type|upper == "LAB" %}
+                            <span class="badge lab">LAB</span>
+                        {% else %}
+                            <span class="badge theory">THEORY</span>
+                        {% endif %}
+                    </td>
+
+                    <td>{{ subject.weekly_hours }}</td>
+
+                    <td>
+                        {% if subject.department_name %}
+                            <span class="badge dept">
+                                {{ subject.department_name }}
+                            </span>
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+
+                    <!-- ADMIN ONLY: EDIT AND DELETE -->
+                    {% if session.get('role', '').upper() == 'ADMIN' %}
+                    <td>
+                        <button
+                            type="button"
+                            class="edit-btn edit-subject-button"
+                            data-subject-id="{{ subject.subject_id }}"
+                            data-subject-code="{{ subject.subject_code or '' }}"
+                            data-subject-name="{{ subject.subject_name }}"
+                            data-subject-type="{{ subject.subject_type or 'THEORY' }}"
+                            data-weekly-hours="{{ subject.weekly_hours }}"
+                            data-department-id="{{ subject.department_id or '' }}">
+                            ✏️ Edit
+                        </button>
+
+                        <button
+                            type="button"
+                            class="delete-btn delete-subject-button"
+                            data-subject-id="{{ subject.subject_id }}">
+                            🗑️ Delete
+                        </button>
+                    </td>
+                    {% endif %}
+                </tr>
+
+                {% else %}
+                <tr>
+                    <td
+                        colspan="{% if session.get('role', '').upper() == 'ADMIN' %}6{% else %}5{% endif %}"
+                        class="no-data">
+                        📚 No subjects found.
+                    </td>
+                </tr>
+                {% endfor %}
+
+            </tbody>
+        </table>
+    </div>
+
+    <!-- ADMIN ONLY: ADD/EDIT SUBJECT MODAL -->
+    {% if session.get('role', '').upper() == 'ADMIN' %}
+
+    <div class="subject-modal" id="subjectModal">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h2 id="modalTitle">Add Subject</h2>
+
+                <button
+                    type="button"
+                    class="close-btn"
+                    id="closeModalButton"
+                    aria-label="Close modal">
+                    ×
+                </button>
+            </div>
+
+            <form method="POST" action="{{ url_for('save_subject') }}" id="subjectForm">
+
+                <input type="hidden" name="subject_id" id="subject_id">
+
+                <div class="form-grid">
+
+                    <div class="form-group">
+                        <label for="subject_code">Subject Code *</label>
+                        <input
+                            type="text"
+                            name="subject_code"
+                            id="subject_code"
+                            placeholder="Example: CS301"
+                            required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="subject_name">Subject Name *</label>
+                        <input
+                            type="text"
+                            name="subject_name"
+                            id="subject_name"
+                            placeholder="Example: Data Structures"
+                            required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="subject_type">Subject Type</label>
+                        <select name="subject_type" id="subject_type">
+                            <option value="THEORY">THEORY</option>
+                            <option value="LAB">LAB</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="weekly_hours">Weekly Hours</label>
+                        <input
+                            type="number"
+                            name="weekly_hours"
+                            id="weekly_hours"
+                            value="3"
+                            min="1"
+                            max="20"
+                            required>
+                    </div>
+
+                    <div class="form-group full">
+                        <label for="department_id">Department</label>
+                        <select name="department_id" id="department_id">
+                            <option value="">Select Department</option>
+
+                            {% for department in departments %}
+                                <option value="{{ department.department_id }}">
+                                    {{ department.department_name }}
+                                </option>
+                            {% endfor %}
+
+                        </select>
+                    </div>
+
+                </div>
+
+                <div class="form-actions">
+
+                    <button
+                        type="button"
+                        class="cancel-btn"
+                        id="cancelModalButton">
+                        Cancel
+                    </button>
+
+                    <button type="submit" class="save-btn">
+                        Save Subject
+                    </button>
+
+                </div>
+            </form>
+
+        </div>
+    </div>
+
+    {% endif %}
+
+</div>
+
+<!-- SEARCH: WORKS FOR BOTH ADMIN AND STAFF -->
+<script>
+(function () {
+    const searchInput = document.getElementById("searchSubject");
+    const tableBody = document.getElementById("subjectTableBody");
+
+    if (!searchInput || !tableBody) {
+        return;
+    }
+
+    searchInput.addEventListener("input", function () {
+        const searchValue = searchInput.value.toLowerCase().trim();
+        const rows = tableBody.querySelectorAll("tr");
+
+        rows.forEach(function (row) {
+            const rowText = row.textContent.toLowerCase();
+
+            row.style.display =
+                rowText.includes(searchValue) ? "" : "none";
+        });
+    });
+})();
+</script>
+
+<!-- ADMIN ONLY: ADD, EDIT AND DELETE JAVASCRIPT -->
+{% if session.get('role', '').upper() == 'ADMIN' %}
+
+<script>
+(function () {
+    const modal = document.getElementById("subjectModal");
+    const addButton = document.getElementById("addSubjectButton");
+    const closeButton = document.getElementById("closeModalButton");
+    const cancelButton = document.getElementById("cancelModalButton");
+    const subjectForm = document.getElementById("subjectForm");
+    const modalTitle = document.getElementById("modalTitle");
+
+    if (!modal || !addButton || !subjectForm) {
+        return;
+    }
+
+    function openModal() {
+        modal.classList.add("show");
+    }
+
+    function closeModal() {
+        modal.classList.remove("show");
+    }
+
+    function resetSubjectForm() {
+        subjectForm.reset();
+
+        document.getElementById("subject_id").value = "";
+        document.getElementById("weekly_hours").value = "3";
+        document.getElementById("subject_type").value = "THEORY";
+        document.getElementById("department_id").value = "";
+
+        modalTitle.textContent = "Add Subject";
+    }
+
+    addButton.addEventListener("click", function () {
+        resetSubjectForm();
+        openModal();
+    });
+
+    closeButton.addEventListener("click", closeModal);
+    cancelButton.addEventListener("click", closeModal);
+
+    modal.addEventListener("click", function (event) {
+        if (event.target === modal) {
+            closeModal();
+        }
+    });
+
+    document.querySelectorAll(".edit-subject-button").forEach(function (button) {
+        button.addEventListener("click", function () {
+
+            document.getElementById("subject_id").value =
+                button.dataset.subjectId || "";
+
+            document.getElementById("subject_code").value =
+                button.dataset.subjectCode || "";
+
+            document.getElementById("subject_name").value =
+                button.dataset.subjectName || "";
+
+            document.getElementById("subject_type").value =
+                (button.dataset.subjectType || "THEORY").toUpperCase();
+
+            document.getElementById("weekly_hours").value =
+                button.dataset.weeklyHours || "3";
+
+            document.getElementById("department_id").value =
+                button.dataset.departmentId || "";
+
+            modalTitle.textContent = "Edit Subject";
+            openModal();
+        });
+    });
+
+    document.querySelectorAll(".delete-subject-button").forEach(function (button) {
+        button.addEventListener("click", function () {
+
+            const subjectId = button.dataset.subjectId;
+
+            if (!subjectId) {
+                alert("Subject ID is missing.");
+                return;
+            }
+
+            const confirmed = confirm(
+                "Are you sure you want to delete this subject?"
+            );
+
+            if (confirmed) {
+                window.location.href =
+                    "{{ url_for('subjects') }}/delete/" +
+                    encodeURIComponent(subjectId);
+            }
+        });
+    });
+
+    document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape" && modal.classList.contains("show")) {
+            closeModal();
+        }
+    });
+})();
+</script>
+
+{% endif %}
+
+{% endblock %}

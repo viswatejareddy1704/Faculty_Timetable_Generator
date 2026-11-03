@@ -1,0 +1,461 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>TimeTable | Login</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        :root {
+            --navy: #111827;
+            --blue: #2563eb;
+            --purple: #5145e5;
+            --text: #172033;
+            --muted: #64748b;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            padding: 24px;
+            background: #f3f6fb;
+            color: var(--text);
+        }
+
+        .page {
+            width: 100%;
+            max-width: 1050px;
+            min-height: 600px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            overflow: hidden;
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 18px 60px rgba(20, 35, 70, 0.12);
+        }
+
+        /* Left welcome panel */
+        .welcome {
+            padding: 38px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            color: white;
+            background: linear-gradient(140deg, #2563eb, #5145e5 65%, #7547e8);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-icon {
+            font-size: 34px;
+        }
+
+        .brand h2 {
+            margin: 0;
+            font-size: 25px;
+        }
+
+        .brand p {
+            margin: 5px 0 0;
+            color: #e0e7ff;
+            font-size: 13px;
+        }
+
+        .hero {
+            margin: 45px 0;
+        }
+
+        .hero-icon {
+            width: 112px;
+            height: 112px;
+            display: grid;
+            place-items: center;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255,255,255,.35);
+            border-radius: 28px;
+            background: rgba(255,255,255,.15);
+            font-size: 58px;
+        }
+
+        .hero h1 {
+            margin: 0 0 16px;
+            font-size: clamp(30px, 4vw, 42px);
+            line-height: 1.15;
+        }
+
+        .hero p {
+            color: #e8edff;
+            line-height: 1.8;
+            font-size: 15px;
+        }
+
+        .features {
+            display: grid;
+            gap: 13px;
+            color: #f1f5ff;
+            font-size: 14px;
+        }
+
+        .feature {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .copyright {
+            margin-top: 35px;
+            color: #e0e7ff;
+            font-size: 12px;
+        }
+
+        /* Right login panel */
+        .login-panel {
+            padding: 48px 42px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .top-label {
+            margin-bottom: 12px;
+            color: var(--purple);
+            font-size: 12px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .login-panel h2 {
+            margin: 0 0 10px;
+            font-size: 30px;
+        }
+
+        .subtitle {
+            margin: 0 0 28px;
+            color: var(--muted);
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        label {
+            display: block;
+            margin: 17px 0 8px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        input {
+            width: 100%;
+            min-width: 0;
+            padding: 14px;
+            border: 1px solid #dce3ee;
+            border-radius: 10px;
+            background: #fbfcff;
+            color: var(--text);
+            font-size: 15px;
+            outline: none;
+            transition: border-color .2s, box-shadow .2s;
+        }
+
+        input:focus {
+            border-color: var(--blue);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, .12);
+        }
+
+        .password-wrap {
+            position: relative;
+        }
+
+        .password-wrap input {
+            padding-right: 76px;
+        }
+
+        .show-password {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: auto;
+            margin: 0;
+            padding: 7px;
+            border: 0;
+            background: transparent;
+            color: var(--purple);
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .options {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 17px;
+            font-size: 12px;
+        }
+
+        .remember {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            margin: 0;
+            color: var(--muted);
+            font-weight: normal;
+        }
+
+        .remember input {
+            width: 16px;
+            height: 16px;
+            margin: 0;
+            accent-color: var(--purple);
+        }
+
+        a {
+            color: var(--purple);
+            font-weight: bold;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .submit-btn {
+            width: 100%;
+            margin-top: 25px;
+            padding: 15px;
+            border: 0;
+            border-radius: 10px;
+            background: linear-gradient(100deg, #2563eb, #5145e5);
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 8px 18px rgba(81, 69, 229, .2);
+            transition: transform .2s, opacity .2s;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            opacity: .95;
+        }
+
+        .signup {
+            margin-top: 24px;
+            text-align: center;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .message {
+            padding: 12px 14px;
+            margin: 0 0 12px;
+            border-radius: 9px;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .message.success {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .message.error, .message.danger {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .message.warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .message.info {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        @media (max-width: 760px) {
+            body {
+                padding: 14px;
+            }
+
+            .page {
+                max-width: 480px;
+                grid-template-columns: 1fr;
+            }
+
+            .welcome {
+                padding: 25px;
+            }
+
+            .hero {
+                margin: 30px 0;
+            }
+
+            .hero-icon {
+                width: 76px;
+                height: 76px;
+                margin-bottom: 20px;
+                font-size: 40px;
+                border-radius: 20px;
+            }
+
+            .hero h1 {
+                font-size: 29px;
+            }
+
+            .features {
+                display: none;
+            }
+
+            .copyright {
+                margin-top: 15px;
+            }
+
+            .login-panel {
+                padding: 30px 25px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                transition: none !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main class="page">
+
+        <section class="welcome">
+            <div class="brand">
+                <span class="brand-icon">📚</span>
+                <div>
+                    <h2>TimeTable</h2>
+                    <p>Faculty Timetable Generator</p>
+                </div>
+            </div>
+
+            <div class="hero">
+                <div class="hero-icon">🗓️</div>
+                <h1>Plan smarter.<br>Teach better.</h1>
+                <p>
+                    Welcome to your automatic timetable generation system.
+                    Manage faculty, subjects, classes and rooms from one
+                    connected platform.
+                </p>
+
+                <div class="features">
+                    <div class="feature">✓ Easy faculty management</div>
+                    <div class="feature">✓ Smart timetable scheduling</div>
+                    <div class="feature">✓ Organised academic data</div>
+                </div>
+            </div>
+
+            <div class="copyright">
+                © 2026 Faculty Timetable Generator
+            </div>
+        </section>
+
+        <section class="login-panel">
+            <div class="top-label">Your workspace</div>
+            <h2>Welcome back! 👋</h2>
+            <p class="subtitle">
+                Sign in to continue to your timetable dashboard.
+            </p>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% for category, message in messages %}
+                    <div class="message {{ category }}" role="status">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endwith %}
+
+            <form method="POST" action="{{ url_for('login') }}">
+                <label for="username">Username</label>
+                <input
+                    id="username"
+                    name="username"
+                    type="text"
+                    placeholder="Enter your username"
+                    autocomplete="username"
+                    required
+                    autofocus
+                >
+
+                <label for="password">Password</label>
+                <div class="password-wrap">
+                    <input
+                        id="password"
+                        name="password"
+                        type="password"
+                        placeholder="Enter your password"
+                        autocomplete="current-password"
+                        required
+                    >
+                    <button
+                        class="show-password"
+                        type="button"
+                        id="togglePassword"
+                        aria-label="Show password"
+                        aria-pressed="false"
+                    >Show</button>
+                </div>
+
+                <div class="options">
+                    <label class="remember">
+                        <input type="checkbox" name="remember">
+                        Remember me
+                    </label>
+
+                    <a href="/forgot-password">Forgot password?</a>
+                </div>
+
+                <button class="submit-btn" type="submit">
+                    Sign In &nbsp; →
+                </button>
+            </form>
+
+            <div class="signup">
+                Don't have an account?
+                <a href="/signup">Create an account</a>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        const passwordInput = document.getElementById("password");
+        const toggleButton = document.getElementById("togglePassword");
+
+        toggleButton.addEventListener("click", function () {
+            const isHidden = passwordInput.type === "password";
+
+            passwordInput.type = isHidden ? "text" : "password";
+            toggleButton.textContent = isHidden ? "Hide" : "Show";
+            toggleButton.setAttribute("aria-pressed", String(isHidden));
+            toggleButton.setAttribute(
+                "aria-label",
+                isHidden ? "Hide password" : "Show password"
+            );
+        });
+    </script>
+</body>
+</html>

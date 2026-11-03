@@ -1,0 +1,370 @@
+
+{% extends "base.html" %}
+
+{% block title %}Departments | Faculty Timetable Generator{% endblock %}
+
+{% block header_title %}Department Management{% endblock %}
+
+{% block header_subtitle %}
+View and manage academic departments used by faculty, subjects and classes.
+{% endblock %}
+
+{% block content %}
+
+<style>
+    .department-grid {
+        display: grid;
+        grid-template-columns: minmax(260px, 360px) minmax(0, 1fr);
+        gap: 24px;
+        align-items: start;
+    }
+
+    .department-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 5px 20px rgba(15, 23, 42, 0.06);
+        min-width: 0;
+    }
+
+    .department-card h2 {
+        font-size: 21px;
+        color: #111827;
+        margin-bottom: 8px;
+    }
+
+    .department-description {
+        color: #64748b;
+        font-size: 14px;
+        line-height: 1.5;
+        margin-bottom: 22px;
+    }
+
+    .department-form-group {
+        margin-bottom: 18px;
+    }
+
+    .department-form-group label {
+        display: block;
+        margin-bottom: 8px;
+    }
+
+    .department-submit {
+        width: 100%;
+        background: #2563eb;
+        color: white;
+    }
+
+    .department-submit:hover {
+        background: #1d4ed8;
+    }
+
+    .department-info {
+        margin-top: 20px;
+        padding: 15px;
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        border-radius: 10px;
+        color: #1e40af;
+        font-size: 13px;
+        line-height: 1.6;
+    }
+
+    .department-view-note {
+        padding: 14px 16px;
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        border-radius: 10px;
+        color: #1e40af;
+        font-size: 13px;
+        line-height: 1.6;
+        margin-bottom: 20px;
+    }
+
+    .department-search {
+        margin-bottom: 18px;
+    }
+
+    .department-search input {
+        width: 100%;
+    }
+
+    .department-table-wrapper {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    .department-table {
+        min-width: 480px;
+    }
+
+    .department-name {
+        font-weight: 700;
+        color: #111827;
+    }
+
+    .department-code {
+        display: inline-block;
+        padding: 6px 10px;
+        border-radius: 7px;
+        background: #dbeafe;
+        color: #1d4ed8;
+        font-weight: 700;
+        font-size: 12px;
+    }
+
+    .department-delete {
+        background: #fee2e2;
+        color: #b91c1c;
+        padding: 8px 12px;
+        font-size: 12px;
+    }
+
+    .department-delete:hover {
+        background: #fecaca;
+    }
+
+    .department-empty {
+        text-align: center;
+        padding: 40px 15px;
+        color: #64748b;
+    }
+
+    .department-empty .empty-icon {
+        font-size: 42px;
+        margin-bottom: 12px;
+    }
+
+    .department-empty h3 {
+        color: #334155;
+        margin-bottom: 8px;
+    }
+
+    @media (max-width: 1050px) {
+        .department-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="department-grid">
+
+    <!-- ADMIN-ONLY ADD DEPARTMENT FORM -->
+    {% if session.get('role', '').upper() == 'ADMIN' %}
+
+    <section class="department-card">
+
+        <h2>➕ Add Department</h2>
+
+        <p class="department-description">
+            Create a new academic department.
+        </p>
+
+        <form action="{{ url_for('add_department') }}" method="POST">
+
+            <div class="department-form-group">
+                <label for="department_name">Department Name</label>
+                <input
+                    type="text"
+                    id="department_name"
+                    name="department_name"
+                    placeholder="Example: Computer Science"
+                    required
+                >
+            </div>
+
+            <div class="department-form-group">
+                <label for="department_code">Department Code</label>
+                <input
+                    type="text"
+                    id="department_code"
+                    name="department_code"
+                    placeholder="Example: CSE"
+                    maxlength="20"
+                    required
+                >
+            </div>
+
+            <button type="submit" class="department-submit">
+                ➕ Add Department
+            </button>
+
+        </form>
+
+        <div class="department-info">
+            <strong>💡 Important</strong>
+            Department codes should be unique. For example, use
+            <strong>CSE</strong> for Computer Science and
+            <strong>ECE</strong> for Electronics and Communication.
+        </div>
+
+    </section>
+
+    {% else %}
+
+    <!-- STAFF INFORMATION -->
+    <section class="department-card">
+
+        <h2>🏢 Academic Departments</h2>
+
+        <p class="department-description">
+            Explore the academic departments available in the college.
+        </p>
+
+        <div class="department-view-note">
+            👁️ Staff access: You can view department names and codes.
+            Only Admin can add or delete departments.
+        </div>
+
+    </section>
+
+    {% endif %}
+
+
+    <!-- DEPARTMENT LIST -->
+    <section class="department-card">
+
+        <h2>📋 Department List</h2>
+
+        <p class="department-description">
+            Departments currently available in the system.
+        </p>
+
+        <!-- SEARCH -->
+        <div class="department-search">
+            <input
+                type="search"
+                id="departmentSearch"
+                placeholder="🔍 Search department name or code..."
+                autocomplete="off"
+                aria-label="Search departments"
+            >
+        </div>
+
+        {% if departments %}
+
+        <div class="department-table-wrapper">
+
+            <table class="department-table" id="departmentTable">
+
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Department Name</th>
+                        <th>Code</th>
+
+                        {% if session.get('role', '').upper() == 'ADMIN' %}
+                        <th>Action</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+
+                <tbody id="departmentTableBody">
+
+                    {% for department in departments %}
+
+                    <tr>
+                        <td>{{ loop.index }}</td>
+
+                        <td>
+                            <div class="department-name">
+                                {{ department.department_name }}
+                            </div>
+                        </td>
+
+                        <td>
+                            <span class="department-code">
+                                {{ department.department_code or '-' }}
+                            </span>
+                        </td>
+
+                        {% if session.get('role', '').upper() == 'ADMIN' %}
+                        <td>
+                            <form
+                                action="{{ url_for('delete_department', department_id=department.department_id) }}"
+                                method="GET"
+                                onsubmit="return confirm('Are you sure you want to delete this department?');"
+                            >
+                                <button
+                                    type="submit"
+                                    class="department-delete"
+                                >
+                                    🗑 Delete
+                                </button>
+                            </form>
+                        </td>
+                        {% endif %}
+
+                    </tr>
+
+                    {% endfor %}
+
+                    <tr id="noSearchResults" style="display:none;">
+                        <td
+                            colspan="{{ 4 if session.get('role', '').upper() == 'ADMIN' else 3 }}"
+                            class="department-empty">
+                            No matching departments found.
+                        </td>
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+        {% else %}
+
+        <div class="department-empty">
+            <div class="empty-icon">🏢</div>
+            <h3>No Departments Found</h3>
+            <p>No departments are currently available.</p>
+        </div>
+
+        {% endif %}
+
+    </section>
+
+</div>
+
+<script>
+(function () {
+
+    const searchInput = document.getElementById("departmentSearch");
+    const tableBody = document.getElementById("departmentTableBody");
+    const noResults = document.getElementById("noSearchResults");
+
+    if (!searchInput || !tableBody) return;
+
+    searchInput.addEventListener("input", function () {
+
+        const query = searchInput.value.toLowerCase().trim();
+
+        const rows = tableBody.querySelectorAll("tr:not(#noSearchResults)");
+
+        let visibleCount = 0;
+
+        rows.forEach(function (row) {
+
+            const rowText = row.textContent.toLowerCase();
+
+            if (rowText.includes(query)) {
+                row.style.display = "";
+                visibleCount++;
+            } else {
+                row.style.display = "none";
+            }
+
+        });
+
+        if (noResults) {
+            noResults.style.display = visibleCount === 0 ? "" : "none";
+        }
+
+    });
+
+})();
+</script>
+
+{% endblock %}

@@ -1,0 +1,1152 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Rooms Management | Faculty Timetable Generator</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: "Segoe UI", Arial, sans-serif;
+        }
+
+        body {
+            background: #f4f7fb;
+            color: #1f2937;
+        }
+
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 250px;
+            height: 100vh;
+            background: linear-gradient(180deg, #111827, #1f2937);
+            color: white;
+            padding: 24px 16px;
+            z-index: 1000;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0 12px 28px;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .logo-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            font-size: 21px;
+        }
+
+        .menu-title {
+            color: #9ca3af;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 10px 14px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            margin: 4px 0;
+            border-radius: 10px;
+            color: #d1d5db;
+            text-decoration: none;
+            transition: 0.2s;
+            font-size: 14px;
+        }
+
+        .nav-link:hover {
+            background: rgba(255,255,255,0.08);
+            color: white;
+            transform: translateX(2px);
+        }
+
+        .nav-link.active {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: white;
+            box-shadow: 0 6px 18px rgba(79,70,229,0.3);
+        }
+
+        .main {
+            margin-left: 250px;
+            min-height: 100vh;
+        }
+
+        .topbar {
+            height: 72px;
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+        }
+
+        .breadcrumb {
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .breadcrumb strong {
+            color: #111827;
+        }
+
+        .profile {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+        }
+
+        .content {
+            padding: 32px;
+        }
+
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            margin-bottom: 28px;
+        }
+
+        .page-title h1 {
+            font-size: 28px;
+            color: #111827;
+            margin-bottom: 7px;
+        }
+
+        .page-title p {
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .btn {
+            border: none;
+            border-radius: 10px;
+            padding: 12px 18px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: 0.2s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: white;
+            box-shadow: 0 6px 15px rgba(79,70,229,0.22);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 20px rgba(79,70,229,0.3);
+        }
+
+        .toolbar {
+            background: white;
+            padding: 18px;
+            border-radius: 14px;
+            border: 1px solid #e5e7eb;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .search-box {
+            position: relative;
+            flex: 1;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 14px 12px 42px;
+            border: 1px solid #d1d5db;
+            border-radius: 10px;
+            outline: none;
+            font-size: 14px;
+        }
+
+        .search-box input:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6b7280;
+        }
+
+        .table-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+            overflow: hidden;
+        }
+
+        .table-header {
+            padding: 18px 22px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .table-header h2 {
+            font-size: 17px;
+        }
+
+        .count {
+            background: #eef2ff;
+            color: #4f46e5;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #f9fafb;
+            color: #6b7280;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+            padding: 14px 18px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        td {
+            padding: 16px 18px;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 14px;
+        }
+
+        tbody tr:hover {
+            background: #fafbff;
+        }
+
+        .room-number {
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .room-id {
+            color: #9ca3af;
+            font-size: 12px;
+        }
+
+        .badge {
+            display: inline-flex;
+            padding: 6px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .badge-classroom {
+            background: #e0e7ff;
+            color: #4338ca;
+        }
+
+        .badge-lab {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        .badge-seminar {
+            background: #fef3c7;
+            color: #b45309;
+        }
+
+        .capacity {
+            font-weight: 600;
+        }
+
+        .building {
+            color: #6b7280;
+        }
+
+        .actions {
+            display: flex;
+            gap: 7px;
+        }
+
+        .action-btn {
+            border: none;
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: 0.2s;
+        }
+
+        .edit-btn {
+            background: #eef2ff;
+            color: #4f46e5;
+        }
+
+        .delete-btn {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .empty {
+            text-align: center;
+            padding: 55px 20px;
+            color: #9ca3af;
+        }
+
+        .empty-icon {
+            font-size: 45px;
+            margin-bottom: 12px;
+        }
+
+        .flash-container {
+            margin-bottom: 20px;
+        }
+
+        .flash {
+            padding: 13px 16px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .flash-success {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+
+        .flash-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15,23,42,0.55);
+            backdrop-filter: blur(4px);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal {
+            width: 100%;
+            max-width: 560px;
+            background: white;
+            border-radius: 18px;
+            box-shadow: 0 25px 70px rgba(0,0,0,0.2);
+            overflow: hidden;
+            animation: modalIn 0.2s ease;
+        }
+
+        @keyframes modalIn {
+            from {
+                opacity: 0;
+                transform: translateY(15px) scale(0.98);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .modal-header {
+            padding: 22px 24px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            font-size: 19px;
+        }
+
+        .close-btn {
+            border: none;
+            background: #f3f4f6;
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 7px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px 13px;
+            border: 1px solid #d1d5db;
+            border-radius: 9px;
+            outline: none;
+            font-size: 14px;
+            background: white;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+
+        .modal-footer {
+            padding: 18px 24px;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        @media (max-width: 900px) {
+            .sidebar {
+                width: 210px;
+            }
+
+            .main {
+                margin-left: 210px;
+            }
+
+            .content {
+                padding: 22px;
+            }
+
+            th,
+            td {
+                padding: 12px 10px;
+            }
+        }
+
+        @media (max-width: 700px) {
+            .sidebar {
+                position: static;
+                width: 100%;
+                height: auto;
+            }
+
+            .main {
+                margin-left: 0;
+            }
+
+            .topbar {
+                padding: 0 18px;
+            }
+
+            .content {
+                padding: 18px;
+            }
+
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .table-card {
+                overflow-x: auto;
+            }
+
+            table {
+                min-width: 750px;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+
+        <div class="logo">
+            <div class="logo-icon"></div>
+            <span>TimeTable</span>
+        </div>
+
+        <div class="menu-title">Main Menu</div>
+
+        <a href="/" class="nav-link">
+            <span></span>
+            <span>Dashboard</span>
+        </a>
+
+        <a href="/faculty" class="nav-link">
+            <span></span>
+            <span>Faculty</span>
+        </a>
+
+        <a href="/subjects" class="nav-link">
+            <span></span>
+            <span>Subjects</span>
+        </a>
+
+        <a href="/classes" class="nav-link">
+            <span></span>
+            <span>Classes</span>
+        </a>
+
+        <a href="/rooms" class="nav-link active">
+            <span></span>
+            <span>Rooms</span>
+        </a>
+
+        <a href="#" class="nav-link">
+            <span></span>
+            <span>Time Slots</span>
+        </a>
+
+        <div class="menu-title">Timetable</div>
+
+        <a href="#" class="nav-link">
+            <span></span>
+            <span>Generate Timetable</span>
+        </a>
+
+        <a href="#" class="nav-link">
+            <span></span>
+            <span>View Timetable</span>
+        </a>
+
+        <a href="#" class="nav-link">
+            <span></span>
+            <span>Reports</span>
+        </a>
+
+    </aside>
+
+
+    <!-- MAIN -->
+    <main class="main">
+
+        <div class="topbar">
+
+            <div class="breadcrumb">
+                Home / <strong>Rooms</strong>
+            </div>
+
+            <div class="profile">
+                <div>
+                    <strong>Administrator</strong>
+                </div>
+
+                <div class="avatar">
+                    A
+                </div>
+            </div>
+
+        </div>
+
+
+        <section class="content">
+
+            <div class="page-header">
+
+                <div class="page-title">
+
+                    <h1>Room Management</h1>
+
+                    <p>
+                        Manage classrooms, laboratories and seminar halls.
+                    </p>
+
+                </div>
+
+                <button
+                    class="btn btn-primary"
+                    onclick="openModal()">
+                     Add Room
+                </button>
+
+            </div>
+
+
+            <!-- FLASH MESSAGES -->
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+
+                {% if messages %}
+
+                    <div class="flash-container">
+
+                        {% for category, message in messages %}
+
+                            <div class="flash flash-{{ category }}">
+                                {{ message }}
+                            </div>
+
+                        {% endfor %}
+
+                    </div>
+
+                {% endif %}
+
+            {% endwith %}
+
+
+            <!-- SEARCH -->
+
+            <div class="toolbar">
+
+                <div class="search-box">
+
+                    <span class="search-icon"></span>
+
+                    <input
+                        type="text"
+                        id="searchInput"
+                        placeholder="Search by room number, type or building..."
+                        onkeyup="searchRooms()">
+
+                </div>
+
+            </div>
+
+
+            <!-- TABLE -->
+
+            <div class="table-card">
+
+                <div class="table-header">
+
+                    <h2>All Rooms</h2>
+
+                    <span class="count">
+                        {{ rooms_list|length }} Rooms
+                    </span>
+
+                </div>
+
+
+                {% if rooms_list %}
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+
+                            <th>ID</th>
+
+                            <th>Room Number</th>
+
+                            <th>Room Type</th>
+
+                            <th>Capacity</th>
+
+                            <th>Building</th>
+
+                            <th>Actions</th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody id="roomsTableBody">
+
+                        {% for room in rooms_list %}
+
+                        <tr>
+
+                            <td>
+                                <span class="room-id">
+                                    #{{ room.room_id }}
+                                </span>
+                            </td>
+
+                            <td>
+
+                                <div class="room-number">
+                                    {{ room.room_number }}
+                                </div>
+
+                            </td>
+
+
+                            <td>
+
+                                {% if room.room_type == "LAB" %}
+
+                                    <span class="badge badge-lab">
+                                         Laboratory
+                                    </span>
+
+                                {% elif room.room_type == "SEMINAR_HALL" %}
+
+                                    <span class="badge badge-seminar">
+                                         Seminar Hall
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="badge badge-classroom">
+                                         Classroom
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <td>
+
+                                <span class="capacity">
+                                     {{ room.capacity }}
+                                </span>
+
+                            </td>
+
+
+                            <td>
+
+                                <span class="building">
+                                     {{ room.building or "Not specified" }}
+                                </span>
+
+                            </td>
+
+
+                            <td>
+
+                                <div class="actions">
+
+                                    <button
+                                        class="action-btn edit-btn"
+                                        title="Edit"
+                                        onclick='editRoom(
+                                            {{ room.room_id }},
+                                            {{ room.room_number|tojson }},
+                                            {{ room.room_type|tojson }},
+                                            {{ room.capacity }},
+                                            {{ (room.building or "")|tojson }}
+                                        )'>
+                                        
+                                    </button>
+
+
+                                    <button
+                                        class="action-btn delete-btn"
+                                        title="Delete"
+                                        onclick="deleteRoom(
+                                            {{ room.room_id }},
+                                            {{ room.room_number|tojson }}
+                                        )">
+                                        
+                                    </button>
+
+                                </div>
+
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+                {% else %}
+
+                    <div class="empty">
+
+                        <div class="empty-icon">
+                            
+                        </div>
+
+                        <h3>No rooms found</h3>
+
+                        <p>
+                            Add your first classroom, lab or seminar hall.
+                        </p>
+
+                    </div>
+
+                {% endif %}
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- MODAL -->
+
+    <div
+        class="modal-overlay"
+        id="roomModal"
+        onclick="closeModalOutside(event)">
+
+        <div class="modal">
+
+            <div class="modal-header">
+
+                <h2 id="modalTitle">
+                    Add Room
+                </h2>
+
+                <button
+                    class="close-btn"
+                    onclick="closeModal()">
+                    
+                </button>
+
+            </div>
+
+
+            <form
+                method="POST"
+                action="/rooms/save">
+
+                <div class="modal-body">
+
+                    <input
+                        type="hidden"
+                        name="room_id"
+                        id="room_id">
+
+
+                    <div class="form-group">
+
+                        <label>
+                            Room Number *
+                        </label>
+
+                        <input
+                            type="text"
+                            name="room_number"
+                            id="room_number"
+                            placeholder="Example: CSE-101"
+                            required>
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label>
+                            Room Type *
+                        </label>
+
+                        <select
+                            name="room_type"
+                            id="room_type"
+                            required>
+
+                            <option value="CLASSROOM">
+                                Classroom
+                            </option>
+
+                            <option value="LAB">
+                                Laboratory
+                            </option>
+
+                            <option value="SEMINAR_HALL">
+                                Seminar Hall
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="form-row">
+
+                        <div class="form-group">
+
+                            <label>
+                                Capacity *
+                            </label>
+
+                            <input
+                                type="number"
+                                name="capacity"
+                                id="capacity"
+                                min="1"
+                                value="60"
+                                required>
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label>
+                                Building
+                            </label>
+
+                            <input
+                                type="text"
+                                name="building"
+                                id="building"
+                                placeholder="Example: Main Block">
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="modal-footer">
+
+                    <button
+                        type="button"
+                        class="btn btn-secondary"
+                        onclick="closeModal()">
+                        Cancel
+                    </button>
+
+                    <button
+                        type="submit"
+                        class="btn btn-primary">
+                         Save Room
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+    <script>
+
+        const modal = document.getElementById("roomModal");
+
+
+        function openModal() {
+
+            document.getElementById("modalTitle").textContent =
+                "Add Room";
+
+            document.getElementById("room_id").value = "";
+
+            document.getElementById("room_number").value = "";
+
+            document.getElementById("room_type").value =
+                "CLASSROOM";
+
+            document.getElementById("capacity").value = "60";
+
+            document.getElementById("building").value = "";
+
+            modal.classList.add("show");
+
+            setTimeout(() => {
+                document.getElementById("room_number").focus();
+            }, 100);
+
+        }
+
+
+        function closeModal() {
+
+            modal.classList.remove("show");
+
+        }
+
+
+        function closeModalOutside(event) {
+
+            if (event.target === modal) {
+
+                closeModal();
+
+            }
+
+        }
+
+
+        function editRoom(
+            roomId,
+            roomNumber,
+            roomType,
+            capacity,
+            building
+        ) {
+
+            document.getElementById("modalTitle").textContent =
+                "Edit Room";
+
+            document.getElementById("room_id").value =
+                roomId;
+
+            document.getElementById("room_number").value =
+                roomNumber;
+
+            document.getElementById("room_type").value =
+                roomType;
+
+            document.getElementById("capacity").value =
+                capacity;
+
+            document.getElementById("building").value =
+                building;
+
+            modal.classList.add("show");
+
+        }
+
+
+        function deleteRoom(roomId, roomNumber) {
+
+            const confirmed = confirm(
+                "Are you sure you want to delete room " +
+                roomNumber +
+                "?"
+            );
+
+            if (confirmed) {
+
+                window.location.href =
+                    "/rooms/delete/" + roomId;
+
+            }
+
+        }
+
+
+        function searchRooms() {
+
+            const input =
+                document
+                    .getElementById("searchInput")
+                    .value
+                    .toLowerCase()
+                    .trim();
+
+            const rows =
+                document.querySelectorAll(
+                    "#roomsTableBody tr"
+                );
+
+            rows.forEach(row => {
+
+                const text =
+                    row.textContent.toLowerCase();
+
+                row.style.display =
+                    text.includes(input)
+                        ? ""
+                        : "none";
+
+            });
+
+        }
+
+
+        document.addEventListener(
+            "keydown",
+            function(event) {
+
+                if (event.key === "Escape") {
+
+                    closeModal();
+
+                }
+
+            }
+        );
+
+    </script>
+
+</body>
+
+</html>
+'@ | Set-Content -Path ".\templates\rooms.html" -Encoding UTF8
+
+

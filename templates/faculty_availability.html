@@ -1,0 +1,334 @@
+﻿
+{% extends "base.html" %}
+
+{% block title %}Faculty Availability{% endblock %}
+
+{% block header_title %}Faculty Availability{% endblock %}
+
+{% block header_subtitle %}
+Control when each faculty member can be assigned classes.
+{% endblock %}
+
+{% block content %}
+
+{% set is_admin = session.get('role', '').upper() == 'ADMIN' %}
+
+<div class="page-title">
+    <div>
+        <h2>Faculty Availability</h2>
+        <p>View faculty availability across the working week.</p>
+    </div>
+</div>
+
+<!-- STAFF VIEW NOTICE -->
+{% if not is_admin %}
+<div style="
+    margin-bottom:20px;
+    padding:15px 18px;
+    background:#dbeafe;
+    border:1px solid #bfdbfe;
+    border-left:5px solid #3b82f6;
+    color:#1e40af;
+    border-radius:12px;
+    font-weight:600;
+">
+    👁️ Staff View: You can view and filter faculty availability. Only Admin can change availability.
+</div>
+{% endif %}
+
+<!-- FILTERS -->
+<div class="card" style="margin-bottom:20px;">
+    <div class="form-grid">
+
+        <div class="form-group">
+            <label for="facultyFilter">Select Faculty</label>
+            <select id="facultyFilter">
+                <option value="">All Faculty</option>
+                {% for member in faculty_list %}
+                <option value="{{ member.faculty_id }}">
+                    {{ member.faculty_name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="dayFilter">Select Day</label>
+            <select id="dayFilter">
+                <option value="">All Days</option>
+                {% for day in ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'] %}
+                <option value="{{ day }}">{{ day|title }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="availabilityFilter">Availability</label>
+            <select id="availabilityFilter">
+                <option value="">All</option>
+                <option value="1">Available</option>
+                <option value="0">Unavailable</option>
+            </select>
+        </div>
+
+    </div>
+
+    <div style="
+        margin-top:20px;
+        background:#eef2ff;
+        border:1px solid #c7d2fe;
+        color:#3730a3;
+        padding:15px 18px;
+        border-radius:12px;
+    ">
+        Select filters to view faculty availability. Green means available; red means unavailable for scheduling.
+    </div>
+</div>
+
+<!-- AVAILABILITY TABLE -->
+<div class="table-card">
+
+    <div style="
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        padding:20px 24px;
+        border-bottom:1px solid #e5e7eb;
+    ">
+        <h3 style="margin:0;">Faculty Availability Schedule</h3>
+
+        <span id="recordCount" style="
+            background:#eef2ff;
+            color:#4338ca;
+            padding:8px 14px;
+            border-radius:20px;
+            font-size:12px;
+            font-weight:bold;
+        ">
+            0 Records
+        </span>
+    </div>
+
+    <div style="overflow-x:auto;">
+        <table id="availabilityTable">
+
+            <thead>
+                <tr>
+                    <th>Faculty</th>
+                    <th>Day</th>
+                    <th>Period</th>
+                    <th>Time</th>
+                    <th>Status</th>
+
+                    {% if is_admin %}
+                    <th>Change</th>
+                    {% endif %}
+                </tr>
+            </thead>
+
+            <tbody id="availabilityTableBody">
+
+                {% for item in availability_list %}
+                <tr
+                    data-faculty="{{ item.faculty_id }}"
+                    data-day="{{ item.day_of_week }}"
+                    data-available="{{ 1 if item.is_available else 0 }}"
+                >
+
+                    <td>
+                        <strong>{{ item.faculty_name }}</strong>
+
+                        {% if item.employee_id %}
+                        <br>
+                        <small>{{ item.employee_id }}</small>
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        <strong style="color:#4338ca;">
+                            {{ item.day_of_week|title }}
+                        </strong>
+                    </td>
+
+                    <td>
+                        <span style="
+                            display:inline-block;
+                            background:#f3e8ff;
+                            color:#7e22ce;
+                            padding:6px 12px;
+                            border-radius:20px;
+                            font-size:12px;
+                            font-weight:bold;
+                        ">
+                            Period {{ item.period_number }}
+                        </span>
+                    </td>
+
+                    <td>{{ item.start_time }} - {{ item.end_time }}</td>
+
+                    <td>
+                        <span class="availability-status {{ '' if item.is_available else 'unavailable' }}">
+                            {{ 'Available' if item.is_available else 'Unavailable' }}
+                        </span>
+                    </td>
+
+                    {% if is_admin %}
+                    <td>
+                        <input
+                            type="checkbox"
+                            class="availability-toggle"
+                            aria-label="Change availability for {{ item.faculty_name }}, {{ item.day_of_week }}, period {{ item.period_number }}"
+                            data-faculty="{{ item.faculty_id }}"
+                            data-slot="{{ item.slot_id }}"
+                            {% if item.is_available %}checked{% endif %}
+                            style="
+                                width:42px;
+                                height:22px;
+                                cursor:pointer;
+                                accent-color:#16c765;
+                            "
+                        >
+                    </td>
+                    {% endif %}
+
+                </tr>
+
+                {% else %}
+                <tr>
+                    <td colspan="{{ 6 if is_admin else 5 }}" class="empty">
+                        No availability records found.
+                    </td>
+                </tr>
+                {% endfor %}
+
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+    #availabilityTable th,
+    #availabilityTable td {
+        padding:17px 20px;
+        text-align:left;
+        border-bottom:1px solid #edf0f5;
+        white-space:nowrap;
+    }
+
+    #availabilityTable th {
+        background:#f8fafc;
+        color:#64748b;
+        font-size:12px;
+        text-transform:uppercase;
+    }
+
+    #availabilityTable tbody tr:hover {
+        background:#f8faff;
+    }
+
+    #availabilityTable small {
+        display:inline-block;
+        margin-top:5px;
+        color:#64748b;
+    }
+
+    .availability-status {
+        display:inline-block;
+        padding:7px 13px;
+        border-radius:20px;
+        font-size:12px;
+        font-weight:bold;
+        background:#dcfce7;
+        color:#166534;
+    }
+
+    .availability-status.unavailable {
+        background:#fee2e2;
+        color:#b91c1c;
+    }
+
+    .availability-toggle {
+        accent-color:#16c765;
+    }
+
+    @media (max-width:760px) {
+        #availabilityTable th,
+        #availabilityTable td {
+            padding:12px;
+        }
+    }
+</style>
+
+<script>
+(function () {
+
+    const facultyFilter = document.getElementById("facultyFilter");
+    const dayFilter = document.getElementById("dayFilter");
+    const availabilityFilter = document.getElementById("availabilityFilter");
+    const tableBody = document.getElementById("availabilityTableBody");
+    const recordCount = document.getElementById("recordCount");
+
+    function applyFilters() {
+
+        const faculty = facultyFilter.value;
+        const day = dayFilter.value;
+        const availability = availabilityFilter.value;
+
+        let visible = 0;
+
+        tableBody.querySelectorAll("tr[data-faculty]").forEach(function (row) {
+
+            const matchesFaculty =
+                !faculty || row.dataset.faculty === faculty;
+
+            const matchesDay =
+                !day || row.dataset.day === day;
+
+            const matchesAvailability =
+                availability === "" ||
+                row.dataset.available === availability;
+
+            const show =
+                matchesFaculty &&
+                matchesDay &&
+                matchesAvailability;
+
+            row.style.display = show ? "" : "none";
+
+            if (show) {
+                visible++;
+            }
+        });
+
+        recordCount.textContent = visible + " Records";
+    }
+
+    facultyFilter.addEventListener("change", applyFilters);
+    dayFilter.addEventListener("change", applyFilters);
+    availabilityFilter.addEventListener("change", applyFilters);
+
+    {% if is_admin %}
+
+    document.querySelectorAll(".availability-toggle").forEach(function (toggle) {
+
+        toggle.addEventListener("change", function () {
+
+            alert(
+                "Availability saving is not connected yet. " +
+                "Please wait until the Admin update route is connected."
+            );
+
+            // Revert the checkbox because database saving is not connected yet.
+            toggle.checked = !toggle.checked;
+        });
+
+    });
+
+    {% endif %}
+
+    applyFilters();
+
+})();
+</script>
+
+{% endblock %}

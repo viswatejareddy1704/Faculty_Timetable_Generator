@@ -1,0 +1,472 @@
+
+{% extends "base.html" %}
+
+{% block title %}Dashboard | Faculty Timetable Generator{% endblock %}
+
+{% block header_title %}
+    {% if session.get('role', '').upper() == 'ADMIN' %}
+        Automatic Timetable Generation
+    {% else %}
+        Staff Dashboard
+    {% endif %}
+{% endblock %}
+
+{% block header_subtitle %}
+    {% if session.get('role', '').upper() == 'ADMIN' %}
+        Manage all timetable data from one connected system
+    {% else %}
+        View your timetable, check scheduling conflicts and download reports
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+
+<style>
+    .dashboard-page {
+        color: #1f2937;
+    }
+
+    .dashboard-page * {
+        box-sizing: border-box;
+    }
+
+    .dashboard-page .welcome {
+        background: linear-gradient(135deg, #2563eb, #4f46e5);
+        color: white;
+        padding: 28px;
+        border-radius: 16px;
+        margin-bottom: 25px;
+    }
+
+    .dashboard-page .welcome h2 {
+        font-size: 25px;
+        margin-bottom: 8px;
+    }
+
+    .dashboard-page .welcome p {
+        opacity: 0.95;
+        line-height: 1.6;
+    }
+
+    .dashboard-page .cards {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 18px;
+        margin-bottom: 25px;
+    }
+
+    .dashboard-page .stat-card {
+        background: white;
+        border-radius: 14px;
+        padding: 22px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        min-width: 0;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    .dashboard-page .card-icon {
+        width: 52px;
+        height: 52px;
+        flex-shrink: 0;
+        border-radius: 12px;
+        background: #eff6ff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 25px;
+    }
+
+    .dashboard-page .stat-card h3 {
+        font-size: 27px;
+        margin-bottom: 4px;
+    }
+
+    .dashboard-page .stat-card p {
+        color: #6b7280;
+        font-size: 14px;
+    }
+
+    .dashboard-page .section-title {
+        font-size: 21px;
+        margin-bottom: 18px;
+    }
+
+    .dashboard-page .workflow,
+    .dashboard-page .generation {
+        background: white;
+        padding: 25px;
+        border-radius: 15px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+        margin-bottom: 25px;
+    }
+
+    .dashboard-page .workflow-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 15px;
+    }
+
+    .dashboard-page .module {
+        display: block;
+        min-width: 0;
+        text-decoration: none;
+        color: #1f2937;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 20px;
+        transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+        background: white;
+    }
+
+    .dashboard-page .module:hover {
+        border-color: #2563eb;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(37, 99, 235, 0.12);
+    }
+
+    .dashboard-page .module-icon {
+        font-size: 28px;
+        margin-bottom: 10px;
+    }
+
+    .dashboard-page .module h3 {
+        margin-bottom: 6px;
+        font-size: 18px;
+    }
+
+    .dashboard-page .module p {
+        color: #6b7280;
+        font-size: 13px;
+        line-height: 1.5;
+    }
+
+    .dashboard-page .generation-box {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+        padding: 20px;
+        border-radius: 12px;
+        background: #f8fafc;
+        border: 1px solid #e5e7eb;
+    }
+
+    .dashboard-page .generation-box h3 {
+        margin-bottom: 6px;
+    }
+
+    .dashboard-page .generation-box p {
+        color: #6b7280;
+        line-height: 1.6;
+    }
+
+    .dashboard-page .dashboard-btn {
+        display: inline-block;
+        background: #2563eb;
+        color: white;
+        text-decoration: none;
+        padding: 13px 20px;
+        border-radius: 9px;
+        font-weight: bold;
+        white-space: nowrap;
+        text-align: center;
+        transition: background 0.2s;
+    }
+
+    .dashboard-page .dashboard-btn:hover {
+        background: #1d4ed8;
+    }
+
+    .dashboard-page .secondary-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 18px;
+        flex-wrap: wrap;
+    }
+
+    .dashboard-page .secondary-btn {
+        display: inline-block;
+        text-decoration: none;
+        padding: 11px 17px;
+        border-radius: 8px;
+        border: 1px solid #d1d5db;
+        color: #374151;
+        background: white;
+        font-weight: bold;
+    }
+
+    .dashboard-page .secondary-btn:hover {
+        background: #f3f4f6;
+    }
+
+    .dashboard-page .footer-note {
+        margin-top: 25px;
+        text-align: center;
+        color: #9ca3af;
+        font-size: 13px;
+    }
+
+    @media (max-width: 1100px) {
+        .dashboard-page .cards {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .dashboard-page .workflow-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 650px) {
+        .dashboard-page .cards,
+        .dashboard-page .workflow-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .dashboard-page .welcome,
+        .dashboard-page .workflow,
+        .dashboard-page .generation {
+            padding: 18px;
+        }
+
+        .dashboard-page .generation-box {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .dashboard-page .dashboard-btn {
+            white-space: normal;
+        }
+    }
+</style>
+
+<div class="dashboard-page">
+
+    {% if session.get('role', '').upper() == 'ADMIN' %}
+
+        <!-- ADMIN DASHBOARD -->
+
+        <section class="welcome">
+            <h2>Welcome to the Admin Dashboard 👋</h2>
+            <p>
+                Manage departments, faculty, subjects, classes, rooms,
+                faculty availability and assignments. Generate and manage
+                your college timetable from one place.
+            </p>
+        </section>
+
+        <h2 class="section-title">📊 System Overview</h2>
+
+        <section class="cards">
+
+            <div class="stat-card">
+                <div class="card-icon">👩‍🏫</div>
+                <div>
+                    <h3>{{ faculty_count|default(0) }}</h3>
+                    <p>Faculty</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="card-icon">📚</div>
+                <div>
+                    <h3>{{ subject_count|default(0) }}</h3>
+                    <p>Subjects</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="card-icon">👥</div>
+                <div>
+                    <h3>{{ class_count|default(0) }}</h3>
+                    <p>Classes</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="card-icon">🏫</div>
+                <div>
+                    <h3>{{ room_count|default(0) }}</h3>
+                    <p>Rooms</p>
+                </div>
+            </div>
+
+        </section>
+
+        <section class="workflow">
+
+            <h2 class="section-title">🔗 Connected Data Setup</h2>
+
+            <div class="workflow-grid">
+
+                <a href="{{ url_for('departments') }}" class="module">
+                    <div class="module-icon">🏢</div>
+                    <h3>Departments</h3>
+                    <p>Create and manage academic departments.</p>
+                </a>
+
+                <a href="{{ url_for('faculty') }}" class="module">
+                    <div class="module-icon">👩‍🏫</div>
+                    <h3>Faculty</h3>
+                    <p>Add teachers who will be assigned to subjects.</p>
+                </a>
+
+                <a href="{{ url_for('subjects') }}" class="module">
+                    <div class="module-icon">📚</div>
+                    <h3>Subjects</h3>
+                    <p>Create theory and laboratory subjects.</p>
+                </a>
+
+                <a href="{{ url_for('classes') }}" class="module">
+                    <div class="module-icon">👥</div>
+                    <h3>Classes</h3>
+                    <p>Create class sections such as CSE 3-A and CSE 3-B.</p>
+                </a>
+
+                <a href="{{ url_for('rooms') }}" class="module">
+                    <div class="module-icon">🏫</div>
+                    <h3>Rooms</h3>
+                    <p>Manage classrooms and laboratory rooms.</p>
+                </a>
+
+                <a href="{{ url_for('time_slots') }}" class="module">
+                    <div class="module-icon">🕐</div>
+                    <h3>Time Slots</h3>
+                    <p>Define the periods available for timetable generation.</p>
+                </a>
+
+                <a href="{{ url_for('faculty_availability') }}" class="module">
+                    <div class="module-icon">🗓️</div>
+                    <h3>Faculty Availability</h3>
+                    <p>Configure faculty availability.</p>
+                </a>
+
+                <a href="{{ url_for('subject_faculty') }}" class="module">
+                    <div class="module-icon">🔗</div>
+                    <h3>Subject–Faculty Mapping</h3>
+                    <p>Connect subjects with their assigned faculty.</p>
+                </a>
+
+                <a href="{{ url_for('class_subjects') }}" class="module">
+                    <div class="module-icon">🔗</div>
+                    <h3>Class–Subject Mapping</h3>
+                    <p>Connect subjects with the classes that study them.</p>
+                </a>
+
+            </div>
+        </section>
+
+        <section class="generation">
+
+            <h2 class="section-title">⚡ Timetable Generation</h2>
+
+            <div class="generation-box">
+                <div>
+                    <h3>Generate the complete timetable</h3>
+                    <p>
+                        Use faculty availability, rooms, time slots
+                        and assignments to generate the timetable.
+                    </p>
+                </div>
+
+                <a href="{{ url_for('timetable') }}" class="dashboard-btn">
+                    📅 Open Timetable
+                </a>
+            </div>
+
+            <div class="secondary-actions">
+                <a href="{{ url_for('timetable') }}" class="secondary-btn">
+                    📅 View Timetable
+                </a>
+
+                <a href="{{ url_for('conflicts') }}" class="secondary-btn">
+                    ⚠️ Check Conflicts
+                </a>
+
+                <a href="{{ url_for('download_timetable_pdf') }}" class="secondary-btn">
+                    📄 Download PDF
+                </a>
+            </div>
+
+        </section>
+
+    {% else %}
+
+        <!-- STAFF DASHBOARD -->
+
+        <section class="welcome">
+            <h2>Welcome to the Staff Portal 👋</h2>
+            <p>
+                Access your college timetable, review scheduling conflicts
+                and download the timetable as a PDF. Your timetable
+                information is available here whenever you need it.
+            </p>
+        </section>
+
+        <h2 class="section-title">📅 Timetable Access</h2>
+
+        <section class="workflow">
+
+            <div class="workflow-grid">
+
+                <a href="{{ url_for('timetable') }}" class="module">
+                    <div class="module-icon">🗓️</div>
+                    <h3>View Timetable</h3>
+                    <p>
+                        Open the generated college timetable and
+                        review the scheduled classes.
+                    </p>
+                </a>
+
+                <a href="{{ url_for('conflicts') }}" class="module">
+                    <div class="module-icon">⚠️</div>
+                    <h3>Check Conflicts</h3>
+                    <p>
+                        View timetable scheduling conflicts
+                        identified by the system.
+                    </p>
+                </a>
+
+                <a href="{{ url_for('download_timetable_pdf') }}" class="module">
+                    <div class="module-icon">📄</div>
+                    <h3>Download Timetable PDF</h3>
+                    <p>
+                        Download a PDF copy of the generated timetable.
+                    </p>
+                </a>
+
+            </div>
+
+        </section>
+
+        <section class="generation">
+
+            <h2 class="section-title">📌 Quick Access</h2>
+
+            <div class="generation-box">
+                <div>
+                    <h3>View your timetable</h3>
+                    <p>
+                        Quickly open the timetable to check class
+                        schedules, periods and room assignments.
+                    </p>
+                </div>
+
+                <a href="{{ url_for('timetable') }}" class="dashboard-btn">
+                    Open Timetable →
+                </a>
+            </div>
+
+        </section>
+
+    {% endif %}
+
+    <div class="footer-note">
+        Faculty Automatic Timetable Generation System
+        • Flask • MySQL • OR-Tools
+    </div>
+
+</div>
+
+{% endblock %}

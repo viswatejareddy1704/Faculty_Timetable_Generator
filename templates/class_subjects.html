@@ -1,0 +1,776 @@
+﻿
+{% extends "base.html" %}
+
+{% block title %}Class–Subject Mapping{% endblock %}
+
+{% block header_title %}
+Class–Subject Mapping
+{% endblock %}
+
+{% block header_subtitle %}
+Assign subjects to classes and manage weekly hours
+{% endblock %}
+
+{% block content %}
+
+{% set is_admin = session.get('role', '').upper() == 'ADMIN' %}
+
+<style>
+    .page-container {
+        width: 100%;
+    }
+
+    .staff-notice {
+        margin-bottom: 20px;
+        padding: 15px 18px;
+        background: #dbeafe;
+        border: 1px solid #bfdbfe;
+        border-left: 5px solid #3b82f6;
+        color: #1e40af;
+        border-radius: 12px;
+        font-weight: 600;
+    }
+
+    .top-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 25px;
+        flex-wrap: wrap;
+    }
+
+    .page-info h2 {
+        margin: 0;
+        font-size: 22px;
+        color: #172033;
+    }
+
+    .page-info p {
+        margin: 6px 0 0;
+        color: #6b7280;
+        font-size: 14px;
+    }
+
+    .primary-btn {
+        border: none;
+        background: #2563eb;
+        color: white;
+        padding: 12px 18px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .primary-btn:hover {
+        background: #1d4ed8;
+    }
+
+    .table-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+        overflow-x: auto;
+    }
+
+    .table-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 15px;
+        flex-wrap: wrap;
+        margin-bottom: 18px;
+    }
+
+    .table-toolbar h3 {
+        margin: 0;
+        color: #172033;
+    }
+
+    .search-input {
+        width: 100%;
+        max-width: 320px;
+        box-sizing: border-box;
+        padding: 11px 13px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        font-size: 14px;
+    }
+
+    .search-input:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+    .mapping-table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 850px;
+    }
+
+    .mapping-table th {
+        background: #172033;
+        color: white;
+        padding: 13px;
+        text-align: left;
+        font-size: 13px;
+        white-space: nowrap;
+    }
+
+    .mapping-table td {
+        padding: 13px;
+        border-bottom: 1px solid #e5e7eb;
+        color: #374151;
+        font-size: 14px;
+    }
+
+    .mapping-table tr:hover {
+        background: #f8fafc;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 5px 9px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .badge-theory {
+        background: #dbeafe;
+        color: #1d4ed8;
+    }
+
+    .badge-lab {
+        background: #dcfce7;
+        color: #15803d;
+    }
+
+    .hours-badge {
+        background: #f3e8ff;
+        color: #7e22ce;
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 12px;
+    }
+
+    .action-btn {
+        border: none;
+        border-radius: 7px;
+        padding: 8px 11px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+        margin-right: 5px;
+    }
+
+    .delete-btn {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+
+    .delete-btn:hover {
+        background: #fecaca;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 50px 20px;
+        color: #6b7280;
+    }
+
+    .empty-state-icon {
+        font-size: 45px;
+        margin-bottom: 10px;
+    }
+
+    .empty-state h3 {
+        margin: 0 0 8px;
+        color: #374151;
+    }
+
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.6);
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+
+    .modal-overlay.show {
+        display: flex;
+    }
+
+    .modal-box {
+        background: white;
+        width: 100%;
+        max-width: 560px;
+        border-radius: 14px;
+        padding: 25px;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .modal-header h2 {
+        margin: 0;
+        color: #172033;
+        font-size: 20px;
+    }
+
+    .close-btn {
+        border: none;
+        background: #f1f5f9;
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        cursor: pointer;
+        font-size: 20px;
+        color: #475569;
+    }
+
+    .close-btn:hover {
+        background: #e2e8f0;
+    }
+
+    .form-group {
+        margin-bottom: 18px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 7px;
+        color: #374151;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .form-control {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 11px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        font-size: 14px;
+        background: white;
+        color: #111827;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+
+    .hours-info {
+        margin-top: 7px;
+        font-size: 12px;
+        color: #6b7280;
+    }
+
+    .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 25px;
+    }
+
+    .secondary-btn {
+        border: none;
+        background: #e5e7eb;
+        color: #374151;
+        padding: 11px 18px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+    }
+
+    .secondary-btn:hover {
+        background: #d1d5db;
+    }
+
+    .save-btn {
+        border: none;
+        background: #2563eb;
+        color: white;
+        padding: 11px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+    }
+
+    .save-btn:hover {
+        background: #1d4ed8;
+    }
+
+    .subject-code {
+        font-weight: 700;
+        color: #172033;
+    }
+
+    .subject-name {
+        font-size: 12px;
+        color: #6b7280;
+        margin-top: 3px;
+    }
+
+    @media (max-width: 700px) {
+        .table-card {
+            padding: 14px;
+        }
+
+        .search-input {
+            max-width: 100%;
+        }
+
+        .modal-box {
+            padding: 18px;
+        }
+    }
+</style>
+
+<div class="page-container">
+
+    <!-- STAFF VIEW NOTICE -->
+    {% if not is_admin %}
+    <div class="staff-notice">
+        👁️ Staff View: You can view and search class–subject assignments. Only Admin can add or delete assignments.
+    </div>
+    {% endif %}
+
+    <!-- PAGE HEADER -->
+    <div class="top-actions">
+
+        <div class="page-info">
+            <h2>Class–Subject Assignments</h2>
+            <p>
+                Connect subjects with classes before generating the timetable.
+            </p>
+        </div>
+
+        {% if is_admin %}
+        <button
+            type="button"
+            class="primary-btn"
+            onclick="openAddModal()"
+        >
+            ➕ Add Class–Subject
+        </button>
+        {% endif %}
+
+    </div>
+
+    <!-- ASSIGNMENTS TABLE -->
+    <div class="table-card">
+
+        <div class="table-toolbar">
+
+            <h3>📚 Class–Subject Assignments</h3>
+
+            <input
+                type="search"
+                id="mappingSearch"
+                class="search-input"
+                placeholder="🔍 Search class, subject, section..."
+                aria-label="Search class-subject assignments"
+            >
+
+        </div>
+
+        {% if assignments %}
+
+        <table class="mapping-table" id="mappingTable">
+
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Class</th>
+                    <th>Year</th>
+                    <th>Section</th>
+                    <th>Semester</th>
+                    <th>Subject</th>
+                    <th>Type</th>
+                    <th>Weekly Hours</th>
+
+                    {% if is_admin %}
+                    <th>Action</th>
+                    {% endif %}
+                </tr>
+            </thead>
+
+            <tbody id="mappingTableBody">
+
+                {% for assignment in assignments %}
+
+                <tr class="mapping-row">
+
+                    <td>{{ loop.index }}</td>
+
+                    <td>
+                        <strong>{{ assignment.class_name }}</strong>
+                    </td>
+
+                    <td>
+                        Year {{ assignment.year }}
+                    </td>
+
+                    <td>
+                        {{ assignment.section }}
+                    </td>
+
+                    <td>
+                        Semester {{ assignment.semester }}
+                    </td>
+
+                    <td>
+                        <div class="subject-code">
+                            {{ assignment.subject_code }}
+                        </div>
+
+                        <div class="subject-name">
+                            {{ assignment.subject_name }}
+                        </div>
+                    </td>
+
+                    <td>
+                        {% if assignment.subject_type == "LAB" %}
+                        <span class="badge badge-lab">LAB</span>
+                        {% else %}
+                        <span class="badge badge-theory">THEORY</span>
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        <span class="hours-badge">
+                            {{ assignment.weekly_hours }} hrs/week
+                        </span>
+                    </td>
+
+                    {% if is_admin %}
+                    <td>
+                        <form
+                            action="{{ url_for('delete_class_subject', assignment_id=assignment.class_subject_id) }}"
+                            method="POST"
+                            style="display:inline;"
+                            onsubmit="return confirm('Are you sure you want to remove this subject from the class?');"
+                        >
+                            <button
+                                type="submit"
+                                class="action-btn delete-btn"
+                                title="Delete"
+                            >
+                                🗑️ Delete
+                            </button>
+                        </form>
+                    </td>
+                    {% endif %}
+
+                </tr>
+
+                {% endfor %}
+
+                <tr id="noSearchResults" style="display:none;">
+                    <td colspan="{{ 9 if is_admin else 8 }}" class="empty-state">
+                        No matching class–subject assignments found.
+                    </td>
+                </tr>
+
+            </tbody>
+
+        </table>
+
+        {% else %}
+
+        <div class="empty-state">
+            <div class="empty-state-icon">📚</div>
+
+            <h3>No Class–Subject Assignments</h3>
+
+            <p>
+                {% if is_admin %}
+                Add subjects to classes to start building your timetable.
+                {% else %}
+                No class–subject assignments are available to view yet.
+                {% endif %}
+            </p>
+        </div>
+
+        {% endif %}
+
+        <div style="
+            margin-top:15px;
+            color:#64748b;
+            font-size:13px;
+        ">
+            Showing <strong id="visibleCount">{{ assignments|length }}</strong>
+            of {{ assignments|length }} assignments.
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ADMIN: ADD CLASS-SUBJECT MODAL -->
+{% if is_admin %}
+
+<div id="addModal" class="modal-overlay">
+
+    <div class="modal-box">
+
+        <div class="modal-header">
+
+            <h2>Add Class–Subject</h2>
+
+            <button
+                type="button"
+                class="close-btn"
+                onclick="closeAddModal()"
+                aria-label="Close"
+            >
+                ×
+            </button>
+
+        </div>
+
+        <form
+            action="{{ url_for('save_class_subject') }}"
+            method="POST"
+        >
+
+            <div class="form-group">
+
+                <label for="class_id">Select Class</label>
+
+                <select
+                    name="class_id"
+                    id="class_id"
+                    class="form-control"
+                    required
+                >
+
+                    <option value="">-- Select Class --</option>
+
+                    {% for class_item in classes_list %}
+                    <option value="{{ class_item.class_id }}">
+                        {{ class_item.class_name }}
+                        - Section {{ class_item.section }}
+                        - Sem {{ class_item.semester }}
+                    </option>
+                    {% endfor %}
+
+                </select>
+
+            </div>
+
+            <div class="form-group">
+
+                <label for="subject_id">Select Subject</label>
+
+                <select
+                    name="subject_id"
+                    id="subject_id"
+                    class="form-control"
+                    onchange="updateHours()"
+                    required
+                >
+
+                    <option value="">-- Select Subject --</option>
+
+                    {% for subject in subjects_list %}
+                    <option
+                        value="{{ subject.subject_id }}"
+                        data-hours="{{ subject.weekly_hours }}"
+                    >
+                        {{ subject.subject_code }}
+                        - {{ subject.subject_name }}
+                        ({{ subject.subject_type }})
+                    </option>
+                    {% endfor %}
+
+                </select>
+
+            </div>
+
+            <div class="form-group">
+
+                <label for="weekly_hours">Weekly Hours</label>
+
+                <input
+                    type="number"
+                    name="weekly_hours"
+                    id="weekly_hours"
+                    class="form-control"
+                    min="1"
+                    max="20"
+                    value="3"
+                    required
+                >
+
+                <div class="hours-info">
+                    Weekly hours are automatically taken from the selected subject.
+                    You can change them if required.
+                </div>
+
+            </div>
+
+            <div class="modal-actions">
+
+                <button
+                    type="button"
+                    class="secondary-btn"
+                    onclick="closeAddModal()"
+                >
+                    Cancel
+                </button>
+
+                <button type="submit" class="save-btn">
+                    💾 Save Assignment
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+{% endif %}
+
+
+<script>
+(function () {
+
+    // SEARCH
+    const searchInput = document.getElementById("mappingSearch");
+    const tableBody = document.getElementById("mappingTableBody");
+    const visibleCount = document.getElementById("visibleCount");
+    const noResults = document.getElementById("noSearchResults");
+
+    if (searchInput && tableBody) {
+
+        function searchAssignments() {
+
+            const searchText =
+                searchInput.value.trim().toLowerCase();
+
+            const rows =
+                tableBody.querySelectorAll(".mapping-row");
+
+            let visible = 0;
+
+            rows.forEach(function (row) {
+
+                const rowText = row.textContent.toLowerCase();
+
+                const matches = rowText.includes(searchText);
+
+                row.style.display = matches ? "" : "none";
+
+                if (matches) {
+                    visible++;
+                }
+
+            });
+
+            if (visibleCount) {
+                visibleCount.textContent = visible;
+            }
+
+            if (noResults) {
+                noResults.style.display =
+                    visible === 0 && rows.length > 0 ? "" : "none";
+            }
+        }
+
+        searchInput.addEventListener("input", searchAssignments);
+    }
+
+    {% if is_admin %}
+
+    // OPEN MODAL
+    window.openAddModal = function () {
+
+        const modal = document.getElementById("addModal");
+
+        if (modal) {
+            modal.classList.add("show");
+        }
+    };
+
+    // CLOSE MODAL
+    window.closeAddModal = function () {
+
+        const modal = document.getElementById("addModal");
+
+        if (modal) {
+            modal.classList.remove("show");
+        }
+    };
+
+    // AUTO-FILL WEEKLY HOURS
+    window.updateHours = function () {
+
+        const subjectSelect =
+            document.getElementById("subject_id");
+
+        const hoursInput =
+            document.getElementById("weekly_hours");
+
+        if (!subjectSelect || !hoursInput) {
+            return;
+        }
+
+        const selectedOption =
+            subjectSelect.options[subjectSelect.selectedIndex];
+
+        if (selectedOption && selectedOption.dataset.hours) {
+            hoursInput.value = selectedOption.dataset.hours;
+        }
+    };
+
+    // CLOSE WHEN CLICKING OUTSIDE MODAL
+    const modal = document.getElementById("addModal");
+
+    if (modal) {
+
+        modal.addEventListener("click", function (event) {
+
+            if (event.target === modal) {
+                closeAddModal();
+            }
+
+        });
+
+    }
+
+    // CLOSE WITH ESCAPE KEY
+    document.addEventListener("keydown", function (event) {
+
+        if (event.key === "Escape") {
+            closeAddModal();
+        }
+
+    });
+
+    {% endif %}
+
+})();
+</script>
+
+{% endblock %}
